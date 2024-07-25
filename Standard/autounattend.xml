@@ -683,6 +683,105 @@ Where-Object -Property 'FeatureName' -In -Value @(
   Set-Service -Name 'workfolderssvc' -StartupType Manual -ErrorAction Continue
   Set-Service -Name 'wuauserv' -StartupType Manual -ErrorAction Continue
   Set-Service -Name 'wudfsvc' -StartupType Manual -ErrorAction Continue
+
+  # Download Sysinternals Secure Delete tool
+  # Define the URL for the Sysinternals Secure Delete tool
+  $url = "https://download.sysinternals.com/files/SDelete.zip"
+  # Define the local path where the zip file will be downloaded
+  $zipPath = "$env:TEMP\SDelete.zip"
+  # Define the path where the zip file will be extracted
+  $extractPath = "$env:TEMP\SDelete"
+  # Define the path to the SysWOW64 directory for the 64-bit executable
+  $destinationPath64 = "$env:SystemRoot\SysWOW64\sdelete64.exe"
+  # Define the path to the System32 directory for the 32-bit executable
+  $destinationPath32 = "$env:SystemRoot\System32\sdelete.exe"
+
+  # Download the zip file
+  Invoke-WebRequest -Uri $url -OutFile $zipPath
+
+  # Extract the zip file
+  Expand-Archive -Path $zipPath -DestinationPath $extractPath
+
+  # Move the 64-bit sdelete to the SysWOW64 directory
+  Move-Item -Path "$extractPath\sdelete64.exe" -Destination $destinationPath64 -Force
+
+  # Move the 32-bit sdelete to the System32 directory
+  Move-Item -Path "$extractPath\sdelete.exe" -Destination $destinationPath32 -Force
+
+  # Clean up: remove the downloaded zip file and extracted contents
+  Remove-Item -Path $zipPath -Force
+  Remove-Item -Path $extractPath -Recurse -Force
+
+  # Create SecureDelete.bat on "%SystemRoot%\SysWOW64"
+  # Script that uses SecureDelete on the selected file/dir from context menu
+  # Ensure the script is running as administrator
+  If (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
+  {
+      Write-Error "This script needs to be run as administrator."
+      Pause
+      Exit
+  }
+
+  # Define the path for the new PowerShell script
+  $secureDeletePath = Join-Path $env:SystemRoot "SysWOW64\securedelete.ps1"
+
+  # Create the new PowerShell script with the provided content
+  $psContent = @"
+  # PowerShell script for secure deletion
+
+  param (
+      [string[]] `$Items
+  )
+
+  # Check if any arguments were passed and perform the secure delete operation
+  If (`$Items.Length -eq 0) {
+      # No arguments passed, set the default path to $Recycle.Bin
+      `$Items = @('C:\`$Recycle.Bin\*')
+      `$message = "Permanently deleting all items in the Recycle Bin.``nAre you sure you want to continue?"
+  } else {
+      `$message = "Permanently deleting: `$Items``n``nAre you sure you want to continue?"
+  }
+
+  # Function to show a confirmation dialog
+  function Show-ConfirmationDialog {
+      param (
+          [string] `$Message
+      )
+      Add-Type -AssemblyName System.Windows.Forms
+      `$result = [System.Windows.Forms.MessageBox]::Show(`$Message, 'Confirm Secure Delete', [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Exclamation)
+      return (`$result -eq [System.Windows.Forms.DialogResult]::Yes)
+  }
+
+  # Check if sdelete.exe exists
+  `$sdeletePath64 = Join-Path `$env:SystemRoot "SysWOW64\sdelete64.exe"
+  `$sdeletePath32 = Join-Path `$env:SystemRoot "System32\sdelete.exe"
+
+  if (Test-Path `$sdeletePath64) {
+      `$sdelete = `$sdeletePath64
+  } elseif (Test-Path `$sdeletePath32) {
+      `$sdelete = `$sdeletePath32
+  } else {
+      Write-Error "sdelete not found."
+      Exit 1
+  }
+
+  # Confirm action
+  if (-not (Show-ConfirmationDialog -Message `$message)) {
+      Write-Host "Operation cancelled."
+      Exit 1
+  }
+
+  # Perform the secure delete operation
+  foreach (`$item in `$Items) {
+      Write-Host "Securely deleting: `$item"
+      & `$sdelete -p 1 -s -r -q `$item
+  }
+
+  Write-Host "Secure delete completed."
+  "@
+
+  Write-Output "Creating securedelete.ps1 at $secureDeletePath"
+  $psContent | Out-File -FilePath $secureDeletePath -Force -Encoding UTF8
   
   Stop-Transcript]]>
     </File>
@@ -875,7 +974,47 @@ reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskC
 :: Block Automatic Upgrade from Windows 10 22H2 to Windows 11 Although Manual Upgrade is Still Allowed - Credit CyberCPU Tech
 reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "TargetReleaseVersion" /t REG_DWORD /d 1 /f
 reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "TargetReleaseVersionInfo" /t REG_SZ /d "22H2" /f
-reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "ProductVersion" /t REG_SZ /d "Windows 10" /f]]>
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "ProductVersion" /t REG_SZ /d "Windows 10" /f
+
+:: Enable Desktop folder on ThisPC
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}" /v HideIfEnabled /f
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+
+:: Enable Documents folder on ThisPC
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{d3162b92-9365-467a-956b-92703aca08af}" /v HideIfEnabled /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{d3162b92-9365-467a-956b-92703aca08af}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+
+:: Enable Downloads folder on ThisPC
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{088e3905-0323-4b02-9826-5d99428e115f}" /v HideIfEnabled /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{088e3905-0323-4b02-9826-5d99428e115f}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+
+:: Enable Music folder on ThisPC
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{3dfdf296-dbec-4fb4-81d1-6a3438bcf4de}" /v HideIfEnabled /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{1CF1260C-4DD0-4ebb-811F-33C572699FDE}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{3dfdf296-dbec-4fb4-81d1-6a3438bcf4de}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+
+:: Enable Pictures folder on ThisPC
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{24ad3ad4-a569-4530-98e1-ab02f9417aa8}" /v HideIfEnabled /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{24ad3ad4-a569-4530-98e1-ab02f9417aa8}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+
+:: Enable Videos folder on ThisPC
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{f86fa3ab-70d2-4fc7-9c99-fcbf05467f3a}" /v HideIfEnabled /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{f86fa3ab-70d2-4fc7-9c99-fcbf05467f3a}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+
+:: Removes Gallery from explorer navigation pane
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{e88865ea-0e1c-4e20-9aa6-edcd0212c87c}" /ve /d "Gallery" /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{e88865ea-0e1c-4e20-9aa6-edcd0212c87c}" /v HiddenByDefault /t REG_DWORD /d 1 /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\NonEnum" /v {e88865ea-0e1c-4e20-9aa6-edcd0212c87c} /t REG_DWORD /d 1 /f
+
+:: Removes Home from explorer navigation pane
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}" /f
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace_36354489\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}" /f
+
+::Disable Show Files from Office.com in File Explorer
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer" /v DisableGraphRecentItems /t REG_DWORD /d 1 /f
+
+:: Disable Combine Taskbar buttons and hide labels
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoTaskGrouping /t REG_DWORD /d 1 /f]]>
     </File>
     <!--Adds Items to Right-Click Context Menu-->
     <File path="C:\Windows\Setup\Scripts\contextmenu.reg">
@@ -924,7 +1063,490 @@ reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "Product
           
     [HKEY_CLASSES_ROOT\Drive\shell\runas\command]
     @="cmd.exe /c takeown /f \"%1\\\" /r /d y && icacls \"%1\\\" /grant *S-1-3-4:F /t /c & Pause"
-    "IsolatedCommand"="cmd.exe /c takeown /f \"%1\\\" /r /d y && icacls \"%1\\\" /grant *S-1-3-4:F /t /c & Pause"]]>
+    "IsolatedCommand"="cmd.exe /c takeown /f \"%1\\\" /r /d y && icacls \"%1\\\" /grant *S-1-3-4:F /t /c & Pause"
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    ; Add "Change Owner" to the Right Click Context Menu
+    ; Created by: Shawn Brink
+    ; Created on: September 24, 2022
+    ; Tutorial: https://www.elevenforum.com/t/add-change-owner-to-context-menu-in-windows-11.9181/
+
+    ; For files
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner]
+    "MUIVerb"="Change Owner"
+    "Icon"="imageres.dll,-88"
+    "SubCommands"=""
+    "Position"="bottom"
+
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\01Owner]
+    @="See Current Owner"
+    "Icon"="imageres.dll,-1029"
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\01Owner\command]
+    @="powershell -NoExit Get-ACL '%1'| Format-List -Property Owner"
+
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\02Owner]
+    @="Take Ownership"
+    "HasLUAShield"=""
+    "NeverDefault"=""
+    "CommandFlags"=dword:00000020
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\02Owner\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c takeown /f \\\"%1\\\" && icacls \\\"%1\\\" /grant *S-1-3-4:F /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"= "powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c takeown /f \\\"%1\\\" && icacls \\\"%1\\\" /grant *S-1-3-4:F /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\Administrators]
+    @="Change Owner to Administrators"
+    "HasLUAShield"=""
+    "CommandFlags"=dword:00000020
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\Administrators\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Administrators\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Administrators\" /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\Everyone]
+    @="Change Owner to Everyone"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\Everyone\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Everyone\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Everyone\" /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\SYSTEM]
+    @="Change Owner to SYSTEM"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\SYSTEM\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"SYSTEM\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"SYSTEM\" /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\TrustedInstaller]
+    @="Change Owner to TrustedInstaller"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\TrustedInstaller\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"\"\"NT Service\\TrustedInstaller\"\"\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"\"\"NT Service\\TrustedInstaller\"\"\" /t /c /l & pause' -Verb runAs\""
+
+    ; For folders
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner]
+    "MUIVerb"="Change Owner"
+    "AppliesTo"="NOT (System.ItemPathDisplay:=\"C:\\Users\" OR System.ItemPathDisplay:=\"C:\\ProgramData\" OR System.ItemPathDisplay:=\"C:\\Windows\" OR System.ItemPathDisplay:=\"C:\\Windows\\System32\" OR System.ItemPathDisplay:=\"C:\\Program Files\" OR System.ItemPathDisplay:=\"C:\\Program Files (x86)\")"
+    "Icon"="imageres.dll,-88"
+    "NoWorkingDirectory"=""
+    "Position"="bottom"
+    "SubCommands"=""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\01Owner]
+    @="See Current Owner"
+    "Icon"="imageres.dll,-1029"
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\01Owner\command]
+    @="powershell -NoExit Get-ACL '%1'| Format-List -Property Owner"
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\02Owner]
+    @="Take Ownership"
+    "HasLUAShield"=""
+    "CommandFlags"=dword:00000020
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\02Owner\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c takeown /f \\\"%1\\\" /r /d y && icacls \\\"%1\\\" /grant *S-1-3-4:F /t /c /l /q & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c takeown /f \\\"%1\\\" /r /d y && icacls \\\"%1\\\" /grant *S-1-3-4:F /t /c /l /q & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\Administrators]
+    @="Change Owner to Administrators"
+    "HasLUAShield"=""
+    "CommandFlags"=dword:00000020
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\Administrators\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Administrators\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Administrators\" /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\Everyone]
+    @="Change Owner to Everyone"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\Everyone\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Everyone\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Everyone\" /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\SYSTEM]
+    @="Change Owner to SYSTEM"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\SYSTEM\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"SYSTEM\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"SYSTEM\" /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\TrustedInstaller]
+    @="Change Owner to TrustedInstaller"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\TrustedInstaller\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"\"\"NT Service\\TrustedInstaller\"\"\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"\"\"NT Service\\TrustedInstaller\"\"\" /t /c /l & pause' -Verb runAs\""
+
+    ; For drives
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner]
+    "MUIVerb"="Change Owner"
+    "AppliesTo"="NOT (System.ItemPathDisplay:=\"C:\\\")"
+    "Icon"="imageres.dll,-88"
+    "NoWorkingDirectory"=""
+    "Position"="bottom"
+    "SubCommands"=""
+
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\01Owner]
+    @="See Current Owner"
+    "Icon"="imageres.dll,-1029"
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\01Owner\command]
+    @="powershell -NoExit Get-ACL '%1'| Format-List -Property Owner"
+
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runas]
+    @="Take Ownership"
+    "HasLUAShield"=""
+    "CommandFlags"=dword:00000020
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runas\command]
+    @="cmd.exe /c takeown /f \"%1\\\" /r /d y && icacls \"%1\\\" /grant *S-1-3-4:F /t /c & pause"
+    "IsolatedCommand"="cmd.exe /c takeown /f \"%1\\\" /r /d y && icacls \"%1\\\" /grant *S-1-3-4:F /t /c & pause"
+
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasAdministrators]
+    @="Change Owner to Administrators"
+    "HasLUAShield"=""
+    "CommandFlags"=dword:00000020
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasAdministrators\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \"%1\\\" /setowner \"Administrators\" /c & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \"%1\\\" /setowner \"Administrators\" /c & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasEveryone]
+    @="Change Owner to Everyone"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasEveryone\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/k icacls \"%1\\\" /setowner \"Everyone\" /c & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/k icacls \"%1\\\" /setowner \"Everyone\" /c & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasSYSTEM]
+    @="Change Owner to SYSTEM"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasSYSTEM\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \"%1\\\" /setowner \"SYSTEM\" /c & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \"%1\\\" /setowner \"SYSTEM\" /c & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasTrustedInstaller]
+    @="Change Owner to TrustedInstaller"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasTrustedInstaller\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \"%1\\\" /setowner \"\"\"NT Service\\TrustedInstaller\"\"\" /c & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \"%1\\\" /setowner \"\"\"NT Service\\TrustedInstaller\"\"\" /c & pause' -Verb runAs\""
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Add "Reset Permissions" to context menu
+    ; Created by: Shawn Brink
+    ; Created on: January 1, 2024
+    ; Tutorial: https://www.elevenforum.com/t/add-reset-permissions-to-context-menu-in-windows-11.21237/
+
+    [HKEY_CLASSES_ROOT\*\shell\ResetPermissions]
+    "MUIVerb"="Reset Permissions"
+    "HasLUAShield"=""
+    "NoWorkingDirectory"=""
+    "Position"="bottom"
+    "Extended"=-
+
+    [HKEY_CLASSES_ROOT\*\shell\ResetPermissions\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /reset & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ResetPermissions]
+    "MUIVerb"="Reset Permissions"
+    "HasLUAShield"=""
+    "NoWorkingDirectory"=""
+    "Position"="bottom"
+    "Extended"=-
+    "SubCommands"=""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ResetPermissions\shell\001flyout]
+    "MUIVerb"="Reset permissions of this folder only"
+    "HasLUAShield"=""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ResetPermissions\shell\001flyout\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /reset & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ResetPermissions\shell\002flyout]
+    "MUIVerb"="Reset permissions of this folder, subfolders and files"
+    "HasLUAShield"=""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ResetPermissions\shell\002flyout\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /reset /t /c /l & pause' -Verb runAs\""
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Add "Restart Explorer" to context menu
+    ; Created by: Shawn Brink
+    ; Created on: June 27, 2023
+    ; Updated on: October 30, 2023
+    ; Tutorial: https://www.elevenforum.com/t/add-restart-explorer-context-menu-in-windows-11.667/
+
+    [-HKEY_CLASSES_ROOT\DesktopBackground\Shell\Restart Explorer]
+
+    [HKEY_CLASSES_ROOT\DesktopBackground\Shell\Restart Explorer]
+    "icon"="explorer.exe"
+    "Position"="Middle"
+    "SubCommands"=""
+
+    [HKEY_CLASSES_ROOT\DesktopBackground\Shell\Restart Explorer\shell\01menu]
+    "MUIVerb"="Restart Explorer Now"
+
+    [HKEY_CLASSES_ROOT\DesktopBackground\Shell\Restart Explorer\shell\01menu\command]
+    @="cmd.exe /c taskkill /f /im explorer.exe  & start explorer.exe"
+
+    [HKEY_CLASSES_ROOT\DesktopBackground\Shell\Restart Explorer\shell\02menu]
+    "MUIVerb"="Restart Explorer with Pause"
+    "CommandFlags"=dword:00000020
+
+    [HKEY_CLASSES_ROOT\DesktopBackground\Shell\Restart Explorer\shell\02menu\command]
+    @="cmd.exe /c @echo off & echo. & echo Stopping explorer.exe process . . . & echo. & taskkill /f /im explorer.exe & echo. & echo. & echo Waiting to start explorer.exe process when you are ready . . . & pause && start explorer.exe && exit"
+
+    [-HKEY_CLASSES_ROOT\Directory\Background\Shell\Restart Explorer]
+
+    [HKEY_CLASSES_ROOT\Directory\Background\Shell\Restart Explorer]
+    "icon"="explorer.exe"
+    "SubCommands"=""
+    "Position"="Bottom"
+
+    [HKEY_CLASSES_ROOT\Directory\Background\Shell\Restart Explorer\shell\01menu]
+    "MUIVerb"="Restart Explorer Now"
+
+    [HKEY_CLASSES_ROOT\Directory\Background\Shell\Restart Explorer\shell\01menu\command]
+    @="cmd.exe /c taskkill /f /im explorer.exe  & start explorer.exe"
+
+    [HKEY_CLASSES_ROOT\Directory\Background\Shell\Restart Explorer\shell\02menu]
+    "MUIVerb"="Restart Explorer with Pause"
+    "CommandFlags"=dword:00000020
+
+    [HKEY_CLASSES_ROOT\Directory\Background\Shell\Restart Explorer\shell\02menu\command]
+    @="cmd.exe /c @echo off & echo. & echo Stopping explorer.exe process . . . & echo. & taskkill /f /im explorer.exe & echo. & echo. & echo Waiting to start explorer.exe process when you are ready . . . & pause && start explorer.exe && exit"
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Add "Explorer Panes" to context menu
+    ; Created by: Shawn Brink
+    ; Created on: January 27/29th 2017
+    ; Tutorial: https://www.tenforums.com/tutorials/76111-navigation-pane-add-context-menu-windows-10-a.html
+    ; Tutorial: https://www.tenforums.com/tutorials/75915-preview-pane-add-context-menu-windows-10-a.html
+    ; Tutorial: https://www.tenforums.com/tutorials/75922-details-pane-add-context-menu-windows-10-a.html
+    ; Edited by: Undisputed00x
+    ; Edited on: March 15th 2024
+
+    [-HKEY_CLASSES_ROOT\Directory\Background\shell\Explorer Panes]
+
+    [HKEY_CLASSES_ROOT\Directory\Background\shell\Explorer Panes]
+    "Icon"="shell32.dll,-16755"
+    "SubCommands"=""
+    "Position"="Bottom"
+
+    [HKEY_CLASSES_ROOT\Directory\Background\shell\Explorer Panes\shell\01menu]
+    "Icon"="shell32.dll,-16755"
+    "CanonicalName"="{41dd5f6f-9f9e-4066-8836-722fe4bb950e}"
+    "Description"="@shell32.dll,-31422"
+    "MUIVerb"="@shell32.dll,-31421"
+    "PaneID"="{cb316b22-25f7-42b8-8a09-540d23a43c2f}"
+    "PaneVisibleProperty"="PageSpaceControlSizer_Visible"
+
+    [HKEY_CLASSES_ROOT\Directory\Background\shell\Explorer Panes\shell\02menu]
+    "CanonicalName"="{831e1a71-5be9-4934-be77-04baedc9f21b}"
+    "Description"="@shell32.dll,-31424"
+    "Icon"="shell32.dll,-16757"
+    "MUIVerb"="@shell32.dll,-31423"
+    "PaneID"="{893c63d1-45c8-4d17-be19-223be71be365}"
+    "PaneVisibleProperty"="ReadingPaneSizer_Visible"
+    "PolicyID"="{33dcce8d-b6f8-4b7a-ac93-45e301f956aa}"
+
+    [HKEY_CLASSES_ROOT\Directory\Background\shell\Explorer Panes\shell\03menu]
+    "CanonicalName"="{1380d028-a77f-4c12-96c7-ea276333f982}"
+    "Description"="@shell32.dll,-31416"
+    "Icon"="shell32.dll,-16814"
+    "MUIVerb"="@shell32.dll,-31415"
+    "PaneID"="{43abf98b-89b8-472d-b9ce-e69b8229f019}"
+    "PaneVisibleProperty"="PreviewPaneSizer_Visible"
+    "PolicyID"="{17067f8d-981b-42c5-98f8-5bc016d4b073}"
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Customize this folder" from context menu and properties tabs
+    ; Created by: Shawn Brink
+    ; Created on: October 2, 2022
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-customize-this-folder-on-context-menu-and-properties-in-windows-11.9395/
+
+    [-HKEY_CLASSES_ROOT\Directory\shellex\PropertySheetHandlers\{ef43ecfe-2ab9-4632-bf21-58909dd177f0}]
+    [-HKEY_CLASSES_ROOT\Drive\shellex\PropertySheetHandlers\{ef43ecfe-2ab9-4632-bf21-58909dd177f0}]
+
+    ; To set and clear policies
+    [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+    "NoCustomizeThisFolder"=-
+    "NoCustomizeWebView"=-
+    "ClassicShell"=-
+
+    [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+    "NoCustomizeThisFolder"=dword:00000001
+    "NoCustomizeWebView"=-
+    "ClassicShell"=-
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Include in library" from context menu
+    ; Created by: Shawn Brink
+    ; Created on: June 22, 2023
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-include-in-library-context-menu-in-windows-11.15843/
+
+    [-HKEY_CLASSES_ROOT\Folder\ShellEx\ContextMenuHandlers\Library Location]
+    [-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Folder\ShellEx\ContextMenuHandlers\Library Location]
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Pin to quick access" from context menu
+    ; Created by: Shawn Brink
+    ; Created on: November 15, 2021
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-pin-to-quick-access-context-menu-in-windows-11.2807/
+
+    [-HKEY_CLASSES_ROOT\AllFilesystemObjects\shell\pintohome]
+    [-HKEY_CLASSES_ROOT\Drive\shell\pintohome]
+    [-HKEY_CLASSES_ROOT\Folder\shell\pintohome]
+    [-HKEY_CLASSES_ROOT\Network\shell\pintohome]
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Previous version" from context menu and properties
+    ; Created by: Shawn Brink
+    ; Created on: October 2, 2022
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-previous-versions-from-context-menu-and-properties-in-windows-11.9391/
+
+    ; Remove from context menu
+    [-HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\ContextMenuHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+    [-HKEY_CLASSES_ROOT\CLSID\{450D8FBA-AD25-11D0-98A8-0800361B1103}\shellex\ContextMenuHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+    [-HKEY_CLASSES_ROOT\Directory\shellex\ContextMenuHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+    [-HKEY_CLASSES_ROOT\Drive\shellex\ContextMenuHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+
+    ; Remove from Properties page
+    [-HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\PropertySheetHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+    [-HKEY_CLASSES_ROOT\CLSID\{450D8FBA-AD25-11D0-98A8-0800361B1103}\shellex\PropertySheetHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+    [-HKEY_CLASSES_ROOT\Directory\shellex\PropertySheetHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+    [-HKEY_CLASSES_ROOT\Drive\shellex\PropertySheetHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+
+    ; To clear any policies
+    [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer]
+    "NoPreviousVersionsPage"=-
+    [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer]
+    "NoPreviousVersionsPage"=-
+    [HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\PreviousVersions]
+    "DisableLocalPage"=-
+    [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer]
+    "NoPreviousVersionsPage"=-
+    [HKEY_CURRENT_USER\Software\Policies\Microsoft\PreviousVersions]
+    "DisableLocalPage"=-
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Share" from context menu
+    ; Created by: Shawn Brink
+    ; Created on: October 6, 2021
+    ; Updated on: May 3, 2024
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-share-context-menu-in-windows-11.1690/
+
+    [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked]
+    "{e2bf9676-5f8f-435c-97eb-11607a5bedf7}"="Share"
+    [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked]
+    "{e2bf9676-5f8f-435c-97eb-11607a5bedf7}"="Share"
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Troubleshoot Compatibility" from context menu
+    ; Created by: Shawn Brink
+    ; Created on: August 14th 2017
+    ; Tutorial: https://www.tenforums.com/tutorials/91316-remove-troubleshoot-compatibility-context-menu-windows-10-a.html
+
+    [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked]
+    "{1d27f844-3a1f-4410-85ac-14651078412d}"=""
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Add to Favorites" from context menu
+    ; Created by: Shawn Brink
+    ; Created on: May 31, 2022
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-add-to-favorites-context-menu-in-windows-11.6795/
+
+    [-HKEY_CLASSES_ROOT\*\shell\pintohomefile]
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Give access to" from context menu
+    ; Created by: Shawn Brink
+    ; Created on: December 15, 2022
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-give-access-to-context-menu-in-windows-11.11209/
+
+    [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+    "SharingWizardOn"=dword:00000000
+    [-HKEY_CLASSES_ROOT\*\shellex\ContextMenuHandlers\Sharing]
+    [-HKEY_CLASSES_ROOT\Directory\Background\shellex\ContextMenuHandlers\Sharing]
+    [-HKEY_CLASSES_ROOT\Directory\shellex\ContextMenuHandlers\Sharing]
+    [-HKEY_CLASSES_ROOT\Drive\shellex\ContextMenuHandlers\Sharing]
+    [-HKEY_CLASSES_ROOT\LibraryFolder\background\shellex\ContextMenuHandlers\Sharing]
+    [-HKEY_CLASSES_ROOT\UserLibraryFolder\shellex\ContextMenuHandlers\Sharing]
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Windows Registry Editor Version 5.00
+
+    ; Created by: Shawn Brink
+    ; Created on: December 29th 2018
+    ; Updated on: August 30, 2021
+    ; Tutorial: https://www.tenforums.com/tutorials/124353-add-secure-delete-recycle-bin-context-menu-windows-10-a.html
+    ; Edited by: Undisputed00x
+    ; Edited on: July 22th 2024
+
+
+    [HKEY_CLASSES_ROOT\*\shell\Secure Delete]
+    @="Secure Delete"
+    "Position"="Bottom"
+    "NoWorkingDirectory"=""
+    "Icon"="imageres.dll,-5320"
+
+
+    [HKEY_CLASSES_ROOT\*\shell\Secure Delete\command]
+    ; @="powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "%SystemRoot%\SysWOW64\securedelete.ps1" "%1"
+    @=hex(2):70,00,6f,00,77,00,65,00,72,00,73,00,68,00,65,00,6c,00,6c,00,2e,00,\
+      65,00,78,00,65,00,20,00,2d,00,4e,00,6f,00,4c,00,6f,00,67,00,6f,00,20,00,\
+      2d,00,4e,00,6f,00,50,00,72,00,6f,00,66,00,69,00,6c,00,65,00,20,00,2d,00,\
+      57,00,69,00,6e,00,64,00,6f,00,77,00,53,00,74,00,79,00,6c,00,65,00,20,00,\
+      48,00,69,00,64,00,64,00,65,00,6e,00,20,00,2d,00,45,00,78,00,65,00,63,00,\
+      75,00,74,00,69,00,6f,00,6e,00,50,00,6f,00,6c,00,69,00,63,00,79,00,20,00,\
+      42,00,79,00,70,00,61,00,73,00,73,00,20,00,2d,00,46,00,69,00,6c,00,65,00,\
+      20,00,22,00,25,00,53,00,79,00,73,00,74,00,65,00,6d,00,52,00,6f,00,6f,00,\
+      74,00,25,00,5c,00,53,00,79,00,73,00,57,00,4f,00,57,00,36,00,34,00,5c,00,\
+      73,00,65,00,63,00,75,00,72,00,65,00,64,00,65,00,6c,00,65,00,74,00,65,00,\
+      2e,00,70,00,73,00,31,00,22,00,20,00,22,00,25,00,31,00,22,00,00,00
+
+
+    [HKEY_CLASSES_ROOT\Directory\shell\Secure Delete]
+    @="Secure delete"
+    "Position"="Bottom"
+    "AppliesTo"="NOT (System.ItemPathDisplay:=\"C:\\Users\" OR System.ItemPathDisplay:=\"C:\\ProgramData\" OR System.ItemPathDisplay:=\"C:\\Windows\" OR System.ItemPathDisplay:=\"C:\\Windows.old\" OR System.ItemPathDisplay:=\"C:\\Windows\\System32\" OR System.ItemPathDisplay:=\"C:\\Program Files\" OR System.ItemPathDisplay:=\"C:\\Program Files (x86)\")"
+    "NoWorkingDirectory"=""
+    "Icon"="imageres.dll,-5320"
+
+
+    [HKEY_CLASSES_ROOT\Directory\shell\Secure Delete\command]
+    ; @="powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "%SystemRoot%\SysWOW64\securedelete.ps1" "%1"
+    @=hex(2):70,00,6f,00,77,00,65,00,72,00,73,00,68,00,65,00,6c,00,6c,00,2e,00,\
+      65,00,78,00,65,00,20,00,2d,00,4e,00,6f,00,4c,00,6f,00,67,00,6f,00,20,00,\
+      2d,00,4e,00,6f,00,50,00,72,00,6f,00,66,00,69,00,6c,00,65,00,20,00,2d,00,\
+      57,00,69,00,6e,00,64,00,6f,00,77,00,53,00,74,00,79,00,6c,00,65,00,20,00,\
+      48,00,69,00,64,00,64,00,65,00,6e,00,20,00,2d,00,45,00,78,00,65,00,63,00,\
+      75,00,74,00,69,00,6f,00,6e,00,50,00,6f,00,6c,00,69,00,63,00,79,00,20,00,\
+      42,00,79,00,70,00,61,00,73,00,73,00,20,00,2d,00,46,00,69,00,6c,00,65,00,\
+      20,00,22,00,25,00,53,00,79,00,73,00,74,00,65,00,6d,00,52,00,6f,00,6f,00,\
+      74,00,25,00,5c,00,53,00,79,00,73,00,57,00,4f,00,57,00,36,00,34,00,5c,00,\
+      73,00,65,00,63,00,75,00,72,00,65,00,64,00,65,00,6c,00,65,00,74,00,65,00,\
+      2e,00,70,00,73,00,31,00,22,00,20,00,22,00,25,00,31,00,22,00,00,00
+
+
+    ; Recycle Bin background entry
+    [HKEY_CLASSES_ROOT\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}\shell\Secure Delete]
+    @="Secure Delete"
+    "NoWorkingDirectory"=""
+    "Position"="top"
+    "Icon"="imageres.dll,-5320"
+
+
+    [HKEY_CLASSES_ROOT\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}\shell\Secure Delete\command]
+    ; @="powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "%SystemRoot%\SysWOW64\securedelete.ps1"
+    @=hex(2):70,00,6f,00,77,00,65,00,72,00,73,00,68,00,65,00,6c,00,6c,00,2e,00,\
+      65,00,78,00,65,00,20,00,2d,00,4e,00,6f,00,4c,00,6f,00,67,00,6f,00,20,00,\
+      2d,00,4e,00,6f,00,50,00,72,00,6f,00,66,00,69,00,6c,00,65,00,20,00,2d,00,\
+      57,00,69,00,6e,00,64,00,6f,00,77,00,53,00,74,00,79,00,6c,00,65,00,20,00,\
+      48,00,69,00,64,00,64,00,65,00,6e,00,20,00,2d,00,45,00,78,00,65,00,63,00,\
+      75,00,74,00,69,00,6f,00,6e,00,50,00,6f,00,6c,00,69,00,63,00,79,00,20,00,\
+      42,00,79,00,70,00,61,00,73,00,73,00,20,00,2d,00,46,00,69,00,6c,00,65,00,\
+      20,00,22,00,25,00,53,00,79,00,73,00,74,00,65,00,6d,00,52,00,6f,00,6f,00,\
+      74,00,25,00,5c,00,53,00,79,00,73,00,57,00,4f,00,57,00,36,00,34,00,5c,00,\
+      73,00,65,00,63,00,75,00,72,00,65,00,64,00,65,00,6c,00,65,00,74,00,65,00,\
+      2e,00,70,00,73,00,31,00,22,00,20]]>
     </File>
     <File path="C:\Windows\Setup\Scripts\currentuser.cmd">
       <![CDATA[
@@ -1168,8 +1790,26 @@ reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\WindowsAI" /f
 reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\WindowsAI" /v "DisableAIDataAnalysis" /t REG_DWORD /d 1 /f
 reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Windows AI" /v "TurnOffSavingSnapshots" /t REG_DWORD /d 1 /f
 
-:: Disables Wallpaper JPEG Quality Reduction in Windows 10
+:: Show Hidden folders and drivers
+reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "Hidden" /t REG_DWORD /d 1 /f
+
+:: Disable Show Files from Office.com in File Explorer
+reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer" /v ShowCloudFilesInQuickAccess /t REG_DWORD /d 0 /f
+
+:: Disable Frequent Folders in Quick Access
+reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer" /v ShowFrequent /t REG_DWORD /d 0 /f
+
+:: Disable Save Taskbar Thumbnail Previews
+reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM" /v AlwaysHibernateThumbnails  /t REG_DWORD /d 0 /f
+
+:: Disable wallpaper quality compression
 reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v JPEGImportQuality /t REG_DWORD /d 100 /f
+
+:: Disable Folder Thumbnail Previews without Disabling File Thumbnail Previews
+reg.exe add "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags\AllFolders\Shell" /v Logo /t REG_SZ /d imageres.dll,-3 /f
+
+:: Disable Combine Taskbar buttons and hide labels
+reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoTaskGrouping /t REG_DWORD /d 1 /f
 
 :: Restart PC to Apply All Changes
 shutdown /r -t 1]]>
