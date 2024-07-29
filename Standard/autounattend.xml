@@ -6,11 +6,20 @@
   <!--Credit to Chris Titus Tech as this file contains Tweaks from The Windows Utility https://github.com/ChrisTitusTech/winutil | https://christitus.com/windows-tool/ | https://www.youtube.com/@ChrisTitusTech/ -->
   <settings pass="offlineServicing"></settings>
   <settings pass="windowsPE">
+    <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+			<SetupUILanguage>
+				<UILanguage>en-US</UILanguage>
+			</SetupUILanguage>
+			<InputLocale>0409:00000409;0809:00000408</InputLocale>
+			<SystemLocale>en-US</SystemLocale>
+			<UILanguage>en-US</UILanguage>
+			<UserLocale>en-US</UserLocale>
+		</component>
     <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <UserData>
         <ProductKey>
-          <Key>00000-00000-00000-00000-00000</Key>
-          <WillShowUI>Always</WillShowUI>
+          <Key>VK7JG-NPHTM-C97JM-9MPGT-3V66T</Key>
+          <!-- <WillShowUI>Always</WillShowUI> -->
         </ProductKey>
         <AcceptEula>true</AcceptEula>
       </UserData>
@@ -103,7 +112,34 @@
   <settings pass="auditSystem"></settings>
   <settings pass="auditUser"></settings>
   <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+			<InputLocale>0409:00000409;0809:00000408</InputLocale>
+			<SystemLocale>en-US</SystemLocale>
+			<UILanguage>en-US</UILanguage>
+			<UserLocale>en-US</UserLocale>
+		</component>
     <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <UserAccounts>
+				<LocalAccounts>
+					<LocalAccount wcm:action="add">
+						<Name>Admin</Name>
+						<Group>Administrators</Group>
+						<Password>
+							<Value></Value>
+							<PlainText>true</PlainText>
+						</Password>
+					</LocalAccount>
+				</LocalAccounts>
+			</UserAccounts>
+			<AutoLogon>
+				<Username>Admin</Username>
+				<Enabled>true</Enabled>
+				<LogonCount>1</LogonCount>
+				<Password>
+					<Value></Value>
+					<PlainText>true</PlainText>
+				</Password>
+			</AutoLogon>
       <OOBE>
         <HideEULAPage>true</HideEULAPage>
         <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
@@ -112,7 +148,15 @@
         <NetworkLocation>Work</NetworkLocation>
         <ProtectYourPC>3</ProtectYourPC>
       </OOBE>
-      <FirstLogonCommands>       
+      <FirstLogonCommands>
+        <SynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <CommandLine>reg.exe add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoLogonCount /t REG_DWORD /d 0 /f</CommandLine>
+        </SynchronousCommand>
+        <SynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <CommandLine>cmd.exe /c "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\powershell.ps1' -Raw | Invoke-Expression;" &gt;&gt;"C:\Windows\Setup\Scripts\powershell-01.log" 2&gt;&amp;1"</CommandLine>
+        </SynchronousCommand>
         </FirstLogonCommands>
     </component>
   </settings>
@@ -145,7 +189,7 @@ foreach( $file in $Document.unattend.Extensions.File ) {
   Where-Object -Property 'DisplayName' -In -Value @(
   'Microsoft.Microsoft3DViewer';
   'Microsoft.BingSearch';
-  'Microsoft.WindowsCalculator';
+  #'Microsoft.WindowsCalculator';
   'Microsoft.WindowsCamera';
   'Clipchamp.Clipchamp';
   'Microsoft.WindowsAlarms';
@@ -158,12 +202,12 @@ foreach( $file in $Document.unattend.Extensions.File ) {
   'Microsoft.WindowsMaps';
   'Microsoft.ZuneVideo';
   'Microsoft.BingNews';
-  'Microsoft.WindowsNotepad';
+  #'Microsoft.WindowsNotepad';
   'Microsoft.MicrosoftOfficeHub';
   'Microsoft.Office.OneNote';
   'Microsoft.OutlookForWindows';
-  'Microsoft.Paint';
-  'Microsoft.MSPaint';
+  #'Microsoft.Paint';
+  #'Microsoft.MSPaint';
   'Microsoft.People';
   'Microsoft.Windows.Photos';
   'Microsoft.PowerAutomateDesktop';
@@ -178,7 +222,7 @@ foreach( $file in $Document.unattend.Extensions.File ) {
   'Microsoft.WindowsSoundRecorder';
   'Microsoft.BingWeather';
   'Microsoft.ZuneMusic';
-  'Microsoft.WindowsTerminal';
+  #'Microsoft.WindowsTerminal';
   'Microsoft.Xbox.TCUI';
   'Microsoft.XboxApp';
   'Microsoft.XboxGameOverlay';
@@ -199,7 +243,7 @@ foreach( $file in $Document.unattend.Extensions.File ) {
   'Microsoft.MixedReality.Portal';
   'Microsoft.Windows.Ai.Copilot.Provider';
   'Microsoft.WindowsMeetNow';
-  'Microsoft.WindowsStore';
+  #'Microsoft.WindowsStore';
 ) | Remove-AppxProvisionedPackage -AllUsers -Online
 
 Get-WindowsCapability -Online |
@@ -207,10 +251,10 @@ Where-Object -FilterScript {
   ($_.Name -split '~')[0] -in @(
     'Browser.InternetExplorer';
     'MathRecognizer';
-    'Microsoft.Windows.Notepad';
+    #'Microsoft.Windows.Notepad';
     'OpenSSH.Client';
-    'Microsoft.Windows.MSPaint';
-    'Microsoft.Windows.PowerShell.ISE';
+    #'Microsoft.Windows.MSPaint';
+    #'Microsoft.Windows.PowerShell.ISE';
     'App.Support.QuickAssist';
     'App.StepsRecorder';
     'Media.WindowsMediaPlayer';
@@ -229,7 +273,7 @@ Where-Object -Property 'FeatureName' -In -Value @(
   # Start Transcript to capture script output
   $logFile = "C:\Windows\Setup\Scripts\wintweaks.log"
   Start-Transcript -Path $logFile
-          
+
   # Create WinUtil shortcut on the desktop (sourced from CTT MicroWin)
   $desktopPath = "C:\Users\Default\Desktop"
   # Specify the target PowerShell command
@@ -238,46 +282,63 @@ Where-Object -Property 'FeatureName' -In -Value @(
   $shortcutPath = Join-Path $desktopPath 'LAUNCH-CTT-WINUTIL.lnk'
   # Create a shell object
   $shell = New-Object -ComObject WScript.Shell
-        
+
   # Create a shortcut object
   $shortcut = $shell.CreateShortcut($shortcutPath)
-           
+
   # Set properties of the shortcut
   $shortcut.TargetPath = "powershell.exe"
   $shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -Command `"$command`""
   # Save the shortcut
   $shortcut.Save()
-        
+
+  # Create MAS shortcut on the desktop
+  # Specify the target PowerShell command
+  $command2 = "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command 'irm https://get.activated.win | iex'"
+  # Specify the path for the shortcut
+  $shortcutPath2 = Join-Path $desktopPath 'Microsoft Activation Script.lnk'
+  # Create a shell object
+  $shell2 = New-Object -ComObject WScript.Shell
+
+  # Create a shortcut object
+  $shortcut2 = $shell2.CreateShortcut($shortcutPath2)
+
+  # Set properties of the shortcut
+  $shortcut2.TargetPath = "powershell.exe"
+  $shortcut2.Arguments = "-NoProfile -ExecutionPolicy Bypass -Command `"$command2`""
+  # Save the shortcut
+  $shortcut2.Save()
+
   # Make the shortcut have 'Run as administrator' property on
   $bytes = [System.IO.File]::ReadAllBytes($shortcutPath)
   # Set byte value at position 0x15 in hex, or 21 in decimal, from the value 0x00 to 0x20 in hex
   $bytes[0x15] = $bytes[0x15] -bor 0x20
   [System.IO.File]::WriteAllBytes($shortcutPath, $bytes)
-    
-    
+
+
   # Enables .NET Framework 3.5
   DISM /Online /Enable-Feature /FeatureName:NetFx3 /All /Source:X:\sources\sxs /LimitAccess
-  
+
   # Configure Maximum Password Age in Windows
   net.exe accounts /maxpwage:UNLIMITED
-  
+
   # Allow Execution of PowerShell Script Files
   Set-ExecutionPolicy -Scope 'LocalMachine' -ExecutionPolicy 'RemoteSigned' -Force
-  
+
   # Groups or splits svchost.exe processes based on the amount of physical memory in the system to optimize performance
   $ram = (Get-CimInstance -ClassName Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum / 1kb
   Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Type DWord -Value $ram -Force
-  
+
   $autoLoggerDir = "$env:PROGRAMDATA\Microsoft\Diagnosis\ETLLogs\AutoLogger"
   If (Test-Path "$autoLoggerDir\AutoLogger-Diagtrack-Listener.etl") {
       Remove-Item "$autoLoggerDir\AutoLogger-Diagtrack-Listener.etl"
   }
   $icaclsCommand = "icacls `"$autoLoggerDir`" /deny SYSTEM:`"(OI)(CI)F`""
   Invoke-Expression $icaclsCommand | Out-Null
-  
+
   # Disable Defender Auto Sample Submission
   Set-MpPreference -SubmitSamplesConsent 2 -ErrorAction Continue | Out-Null
-  
+
   # Removes Microsoft Edge
   foreach ($line in $lines) {
       if ($line -like '*Architecture : *') {
@@ -290,7 +351,7 @@ Where-Object -Property 'FeatureName' -In -Value @(
           break
       }
   }
-  
+
   if (-not $architecture) {
       Write-Host "Architecture information not found."
   }
@@ -304,56 +365,56 @@ Where-Object -Property 'FeatureName' -In -Value @(
   Remove-Item -Path "C:\Windows\SystemApps\Microsoft.MicrosoftEdgeDevToolsClient_8wekyb3d8bbwe" -Recurse -Force -ErrorAction Continue
   if ($architecture -eq 'amd64') {
       $folderPath = Get-ChildItem -Path "C:\Windows\WinSxS" -Filter "amd64_microsoft-edge-webview_31bf3856ad364e35*" -Directory | Select-Object -ExpandProperty FullName
-  
+
       if ($folderPath) {
-          & 'takeown' '/f' $folderPath '/r' 
-          & icacls $folderPath  "/grant" "$($adminGroup.Value):(F)" '/T' '/C' 
-          Remove-Item -Path $folderPath -Recurse -Force 
+          & 'takeown' '/f' $folderPath '/r'
+          & icacls $folderPath  "/grant" "$($adminGroup.Value):(F)" '/T' '/C'
+          Remove-Item -Path $folderPath -Recurse -Force
       } else {
           Write-Host "Folder not found."
       }
   } elseif ($architecture -eq 'arm64') {
       $folderPath = Get-ChildItem -Path "C:\Windows\WinSxS" -Filter "arm64_microsoft-edge-webview_31bf3856ad364e35*" -Directory | Select-Object -ExpandProperty FullName
-  
+
       if ($folderPath) {
           & 'takeown' '/f' $folderPath '/r'
-          & icacls $folderPath  "/grant" "$($adminGroup.Value):(F)" '/T' '/C' 
-          Remove-Item -Path $folderPath -Recurse -Force 
+          & icacls $folderPath  "/grant" "$($adminGroup.Value):(F)" '/T' '/C'
+          Remove-Item -Path $folderPath -Recurse -Force
       } else {
           Write-Host "Folder not found."
       }
   } else {
       Write-Host "Unknown architecture: $architecture"
   }
-  & 'takeown' '/f' "C:\Windows\System32\Microsoft-Edge-Webview" '/r' 
-  & 'icacls' "C:\Windows\System32\Microsoft-Edge-Webview" '/grant' "$($adminGroup.Value):(F)" '/T' '/C' 
+  & 'takeown' '/f' "C:\Windows\System32\Microsoft-Edge-Webview" '/r'
+  & 'icacls' "C:\Windows\System32\Microsoft-Edge-Webview" '/grant' "$($adminGroup.Value):(F)" '/T' '/C'
   Remove-Item -Path "C:\Windows\System32\Microsoft-Edge-Webview" -Recurse -Force
-  
+
   # Removes OneDrive
   Remove-Item "C:\Users\Default\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\OneDrive.lnk" -ErrorAction Continue
   Remove-Item "C:\Users\Default\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\OneDrive.exe" -ErrorAction Continue
   Remove-Item "C:\Windows\System32\OneDriveSetup.exe" -ErrorAction Continue
   Remove-Item "C:\Windows\SysWOW64\OneDriveSetup.exe" -ErrorAction Continue
-   
+
   # Removes Microsoft Teams
   $TeamsPath = [System.IO.Path]::Combine($env:LOCALAPPDATA, 'Microsoft', 'Teams')
   $TeamsUpdateExePath = [System.IO.Path]::Combine($TeamsPath, 'Update.exe')
-  
+
   Stop-Process -Name "*teams*" -Force -ErrorAction Continue
-  
+
   if ([System.IO.File]::Exists($TeamsUpdateExePath)) {
       # Uninstall app
       $proc = Start-Process $TeamsUpdateExePath "-uninstall -s" -PassThru
       $proc.WaitForExit()
   }
-  
+
   Get-AppxPackage "*Teams*" | Remove-AppxPackage -ErrorAction Continue
   Get-AppxPackage "*Teams*" -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction Continue
-  
+
   if ([System.IO.Directory]::Exists($TeamsPath)) {
       Remove-Item $TeamsPath -Force -Recurse -ErrorAction Continue
   }
-  
+
   # Uninstall from Uninstall registry key UninstallString
   $us = (Get-ChildItem -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall, HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall | Get-ItemProperty | Where-Object { $_.DisplayName -like '*Teams*'}).UninstallString
   if ($us.Length -gt 0) {
@@ -363,7 +424,7 @@ Where-Object -Property 'FeatureName' -In -Value @(
       $proc = Start-Process -FilePath $FilePath -Args $ProcessArgs -PassThru
       $proc.WaitForExit()
   }
-  
+
   # Disables Teredo
   $registryKeysTeredo = @(
       @{Path = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters"; Name = "DisabledComponents"; Type = "DWord"; Value = 1}
@@ -372,7 +433,7 @@ Where-Object -Property 'FeatureName' -In -Value @(
       New-ItemProperty -Path $key.Path -Name $key.Name -PropertyType $key.Type -Value $key.Value -Force
   }
   netsh interface teredo set state disabled
-  
+
   # Disables Telemetry
   # Disable Scheduled Tasks
   $scheduledTasks = @(
@@ -393,13 +454,13 @@ Where-Object -Property 'FeatureName' -In -Value @(
   foreach ($task in $scheduledTasks) {
       schtasks /Change /TN $task /Disable
   }
-  
+
   # Enable the Ultimate Performance power plan
   powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61
-  
+
   # Set the Ultimate Performance power plan as active
   powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61
-  
+
   # Set Services to Manual
   Write-Output 'Set Services to Manual: Turns a bunch of system services to manual that do not need to be running all the time.'
   Set-Service -Name 'AJRouter' -StartupType Disabled -ErrorAction Continue
@@ -531,7 +592,7 @@ Where-Object -Property 'FeatureName' -In -Value @(
   Set-Service -Name 'RpcSs' -StartupType Automatic -ErrorAction Continue
   Set-Service -Name 'SCPolicySvc' -StartupType Manual -ErrorAction Continue
   Set-Service -Name 'SCardSvr' -StartupType Manual -ErrorAction Continue
-  Set-Service -Name 'SDRSVC' -StartupType Manual -ErrorAction Continue 
+  Set-Service -Name 'SDRSVC' -StartupType Manual -ErrorAction Continue
   Set-Service -Name 'SEMgrSvc' -StartupType Manual -ErrorAction Continue
   Set-Service -Name 'SENS' -StartupType Automatic -ErrorAction Continue
   Set-Service -Name 'SNMPTRAP' -StartupType Manual -ErrorAction Continue
@@ -684,6 +745,8 @@ Where-Object -Property 'FeatureName' -In -Value @(
   Set-Service -Name 'wuauserv' -StartupType Manual -ErrorAction Continue
   Set-Service -Name 'wudfsvc' -StartupType Manual -ErrorAction Continue
 
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
   # Download Sysinternals Secure Delete tool
   # Define the URL for the Sysinternals Secure Delete tool
   $url = "https://download.sysinternals.com/files/SDelete.zip"
@@ -711,6 +774,8 @@ Where-Object -Property 'FeatureName' -In -Value @(
   # Clean up: remove the downloaded zip file and extracted contents
   Remove-Item -Path $zipPath -Force
   Remove-Item -Path $extractPath -Recurse -Force
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   # Create SecureDelete.bat on "%SystemRoot%\SysWOW64"
   # Script that uses SecureDelete on the selected file/dir from context menu
@@ -778,11 +843,43 @@ Where-Object -Property 'FeatureName' -In -Value @(
   }
 
   Write-Host "Secure delete completed."
-  "@
+"@
 
   Write-Output "Creating securedelete.ps1 at $secureDeletePath"
   $psContent | Out-File -FilePath $secureDeletePath -Force -Encoding UTF8
-  
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  # Clean empty tasks of TaskManager
+  # Define the registry path
+  $baseRegistryPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\Microsoft\Windows"
+
+  # Define the tasks to be removed
+  $tasksToRemove = @(
+      "Application Experience\Microsoft Compatibility Appraiser",
+      "Autochk\Proxy",
+      "CertificateServicesClient\KeyPreGenTask",
+      "Customer Experience Improvement Program\UsbCeip",
+      "Customer Experience Improvement Program\Consolidator",
+      "Windows Error Reporting\QueueReporting"
+  )
+
+  foreach ($task in $tasksToRemove) {
+      $registryPath = Join-Path -Path $baseRegistryPath -ChildPath $task
+      try {
+          if (Test-Path $registryPath) {
+              Remove-Item -Path $registryPath -Recurse -Force
+              Write-Output "Successfully removed registry key: $registryPath"
+          } else {
+              Write-Output "Registry key not found: $registryPath"
+          }
+      } catch {
+          Write-Error "Failed to remove registry key: $registryPath. Error: $_"
+      }
+  }
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
   Stop-Transcript]]>
     </File>
     <!--Local Machine Registry Entries - This Sets Features for the Local Machine-->
@@ -837,11 +934,11 @@ reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\BitLocker" /v "PreventDeviceE
 reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\EnhancedStorageDevices" /v TCGSecurityActivationDisabled /t REG_DWORD /d 1 /f
 
 :: Sets Windows Update to Only Install Security Updates and Delay Other Updates for 2 Years
-reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v AUOptions /t REG_DWORD /d 3 /f
-reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DeferFeatureUpdates /t REG_DWORD /d 1 /f
-reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DeferFeatureUpdatesPeriodInDays /t REG_DWORD /d 365 /f
-reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DeferQualityUpdates /t REG_DWORD /d 1 /f
-reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DeferQualityUpdatesPeriodInDays /t REG_DWORD /d 365 /f
+:: reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v AUOptions /t REG_DWORD /d 3 /f
+:: reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DeferFeatureUpdates /t REG_DWORD /d 1 /f
+:: reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DeferFeatureUpdatesPeriodInDays /t REG_DWORD /d 365 /f
+:: reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DeferQualityUpdates /t REG_DWORD /d 1 /f
+:: reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DeferQualityUpdatesPeriodInDays /t REG_DWORD /d 365 /f
 
 :: Disables Cortana
 reg.exe add "HKLM\Software\Policies\Microsoft\Windows\Windows Search" /v AllowCortana /t REG_DWORD /d 0 /f
@@ -976,6 +1073,8 @@ reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "TargetR
 reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "TargetReleaseVersionInfo" /t REG_SZ /d "22H2" /f
 reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "ProductVersion" /t REG_SZ /d "Windows 10" /f
 
+:: ========================================================================================================
+
 :: Enable Desktop folder on ThisPC
 reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}" /v HideIfEnabled /f
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}" /v HiddenByDefault /t REG_DWORD /d 0 /f
@@ -1020,53 +1119,6 @@ reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Polici
     <File path="C:\Windows\Setup\Scripts\contextmenu.reg">
       <![CDATA[
     Windows Registry Editor Version 5.00
-    
-    ; Adds "Take Ownership" to the Right Click Context Menu
-    ; Created by: Shawn Brink
-    ; Created on: September 6, 2021
-    ; Updated on: January 7, 2024
-    ; Tutorial: https://www.elevenforum.com/t/add-take-ownership-to-context-menu-in-windows-11.1230/
-                
-    [-HKEY_CLASSES_ROOT\*\shell\TakeOwnership]
-    [-HKEY_CLASSES_ROOT\*\shell\runas]
-          
-    [HKEY_CLASSES_ROOT\*\shell\TakeOwnership]
-    @="Take Ownership"
-    "Extended"=-
-    "HasLUAShield"=""
-    "NoWorkingDirectory"=""
-    "NeverDefault"=""
-          
-    [HKEY_CLASSES_ROOT\*\shell\TakeOwnership\command]
-    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c takeown /f \\\"%1\\\" && icacls \\\"%1\\\" /grant *S-1-3-4:F /t /c /l & pause' -Verb runAs\""
-    "IsolatedCommand"= "powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c takeown /f \\\"%1\\\" && icacls \\\"%1\\\" /grant *S-1-3-4:F /t /c /l & pause' -Verb runAs\""
-               
-    [HKEY_CLASSES_ROOT\Directory\shell\TakeOwnership]
-    @="Take Ownership"
-    "AppliesTo"="NOT (System.ItemPathDisplay:=\"C:\\Users\" OR System.ItemPathDisplay:=\"C:\\ProgramData\" OR System.ItemPathDisplay:=\"C:\\Windows\" OR System.ItemPathDisplay:=\"C:\\Windows\\System32\" OR System.ItemPathDisplay:=\"C:\\Program Files\" OR System.ItemPathDisplay:=\"C:\\Program Files (x86)\")"
-    "Extended"=-
-    "HasLUAShield"=""
-    "NoWorkingDirectory"=""
-    "Position"="middle"
-          
-    [HKEY_CLASSES_ROOT\Directory\shell\TakeOwnership\command]
-    @="powershell -windowstyle hidden -command \"$Y = ($null | choice).Substring(1,1); Start-Process cmd -ArgumentList ('/c takeown /f \\\"%1\\\" /r /d ' + $Y + ' && icacls \\\"%1\\\" /grant *S-1-3-4:F /t /c /l /q & pause') -Verb runAs\""
-    "IsolatedCommand"="powershell -windowstyle hidden -command \"$Y = ($null | choice).Substring(1,1); Start-Process cmd -ArgumentList ('/c takeown /f \\\"%1\\\" /r /d ' + $Y + ' && icacls \\\"%1\\\" /grant *S-1-3-4:F /t /c /l /q & pause') -Verb runAs\""
-                
-    [HKEY_CLASSES_ROOT\Drive\shell\runas]
-    @="Take Ownership"
-    "Extended"=-
-    "HasLUAShield"=""
-    "NoWorkingDirectory"=""
-    "Position"="middle"
-    "AppliesTo"="NOT (System.ItemPathDisplay:=\"C:\\\")"
-          
-    [HKEY_CLASSES_ROOT\Drive\shell\runas\command]
-    @="cmd.exe /c takeown /f \"%1\\\" /r /d y && icacls \"%1\\\" /grant *S-1-3-4:F /t /c & Pause"
-    "IsolatedCommand"="cmd.exe /c takeown /f \"%1\\\" /r /d y && icacls \"%1\\\" /grant *S-1-3-4:F /t /c & Pause"
-
-    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
     ; Add "Change Owner" to the Right Click Context Menu
     ; Created by: Shawn Brink
     ; Created on: September 24, 2022
@@ -1588,12 +1640,12 @@ reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Notepad" /v ShowStoreBanner /t
 reg.exe delete "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v OneDriveSetup /f
 
 :: Align the taskbar to the left on Windows 11
-reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarAl /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarAl /t REG_DWORD /d 0 /f
 
 :: Hides Search Icon on Taskbar
 reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" /v SearchboxTaskbarMode /t REG_DWORD /d 0 /f
 
-:: Start Menu Customizations 
+:: Start Menu Customizations
 :: Disables Recently Added Apps and Recommendations in the Start Menu
 reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Explorer" /v HideRecentlyAddedApps /t REG_DWORD /d 1 /f
 reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v Start_IrisRecommendations /t REG_DWORD /d 0 /f
@@ -1610,7 +1662,7 @@ reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Feeds" 
 reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\Windows Feeds" /v EnableFeeds /t REG_DWORD /d 0 /f
 
 :: Hides or Removes Notifications
-reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" /v ToastEnabled /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" /v ToastEnabled /t REG_DWORD /d 0 /f
 
 :: Disables User Account Sync
 reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Privacy" /v SettingSyncEnabled /t REG_DWORD /d 0 /f
@@ -1669,7 +1721,7 @@ reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explore
 reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v LaunchTo /t REG_DWORD /d 1 /f
 
 :: Set Display for Performance
-reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v MenuShowDelay /t REG_DWORD /d 1 /f
+:: reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v MenuShowDelay /t REG_DWORD /d 1 /f
 
 :: On Shutdown, Windows will automatically close any running applications
 reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v AutoEndTasks /t REG_DWORD /d 1 /f
@@ -1684,25 +1736,25 @@ reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Policie
 reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\UserProfileEngagement" /v ScoobeSystemSettingEnabled /t REG_DWORD /d 0 /f
 
 :: Set Display for Performance
-reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v DragFullWindows /t REG_SZ /d 1 /f
-reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v MenuShowDelay /t REG_SZ /d 200 /f
-reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics" /v MinAnimate /t REG_SZ /d 0 /f
-reg.exe add "HKEY_CURRENT_USER\Control Panel\Keyboard" /v KeyboardDelay /t REG_DWORD /d 0 /f
-reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v ListviewAlphaSelect /t REG_DWORD /d 1 /f
-reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v ListviewShadow /t REG_DWORD /d 0 /f
-reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarAnimations /t REG_DWORD /d 0 /f
-reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarMn /t REG_DWORD /d 0 /f
-reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarDa /t REG_DWORD /d 0 /f
-reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 3 /f
-reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM" /v EnableAeroPeek /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v DragFullWindows /t REG_SZ /d 1 /f
+:: reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v MenuShowDelay /t REG_SZ /d 200 /f
+:: reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics" /v MinAnimate /t REG_SZ /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Control Panel\Keyboard" /v KeyboardDelay /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v ListviewAlphaSelect /t REG_DWORD /d 1 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v ListviewShadow /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarAnimations /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarMn /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarDa /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 3 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM" /v EnableAeroPeek /t REG_DWORD /d 0 /f
 
 :: Set Registry Keys to Enable End Task With Right Click
-reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarDeveloperSettings /t REG_DWORD /d 1 /f
-reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarEndTask /t REG_DWORD /d 1 /f
+:: reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarDeveloperSettings /t REG_DWORD /d 1 /f
+:: reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarEndTask /t REG_DWORD /d 1 /f
 
 :: Disables Notification Tray and Calendar
-reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Explorer" /v DisableNotificationCenter /t REG_DWORD /d 1 /f
-reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\PushNotifications" /v ToastEnabled /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Explorer" /v DisableNotificationCenter /t REG_DWORD /d 1 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\PushNotifications" /v ToastEnabled /t REG_DWORD /d 0 /f
 
 :: Set Classic Right-Click Menu for Windows 11
 reg.exe add "HKEY_CURRENT_USER\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /ve /t REG_SZ /d "" /f
@@ -1730,7 +1782,7 @@ reg.exe add "HKEY_CURRENT_USER\Control Panel\Accessibility\StickyKeys" /v Flags 
 reg.exe add "HKEY_CURRENT_USER\Control Panel\Accessibility\StickyKeys" /v HotkeyFlags /t REG_SZ /d "58" /f
 
 :: Disables Snap Assist Flyout
-reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v SnapAssist /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v SnapAssist /t REG_DWORD /d 0 /f
 
 :: Enables Show File Extensions
 reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v HideFileExt /t REG_DWORD /d 0 /f
@@ -1790,6 +1842,10 @@ reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\WindowsAI" /f
 reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\WindowsAI" /v "DisableAIDataAnalysis" /t REG_DWORD /d 1 /f
 reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Windows AI" /v "TurnOffSavingSnapshots" /t REG_DWORD /d 1 /f
 
+:: Disables Wallpaper JPEG Quality Reduction in Windows 10
+reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v JPEGImportQuality /t REG_DWORD /d 100 /f
+
+:: ========================================================================================================
 :: Show Hidden folders and drivers
 reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "Hidden" /t REG_DWORD /d 1 /f
 
@@ -1802,9 +1858,6 @@ reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explore
 :: Disable Save Taskbar Thumbnail Previews
 reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM" /v AlwaysHibernateThumbnails  /t REG_DWORD /d 0 /f
 
-:: Disable wallpaper quality compression
-reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v JPEGImportQuality /t REG_DWORD /d 100 /f
-
 :: Disable Folder Thumbnail Previews without Disabling File Thumbnail Previews
 reg.exe add "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags\AllFolders\Shell" /v Logo /t REG_SZ /d imageres.dll,-3 /f
 
@@ -1812,7 +1865,7 @@ reg.exe add "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\She
 reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoTaskGrouping /t REG_DWORD /d 1 /f
 
 :: Restart PC to Apply All Changes
-shutdown /r -t 1]]>
+:: shutdown /r -t 1]]>
     </File>
     <!--Additional Edge Removal Script by Chris Titus & AveYo to Ensure Complete Removal-->
     <File path="C:\Windows\Setup\Scripts\edgeremoval.bat">
@@ -1856,7 +1909,7 @@ function global:prepare_edge {
   ri 'Registry::HKEY_Users\S-1-5-21*\Software\Classes\microsoft-edge' -recurse -force -ea 0
   ri 'Registry::HKEY_Users\S-1-5-21*\Software\Classes\MSEdgeHTM' -recurse -force -ea 0
   ni "HKLM:\SOFTWARE\Classes\microsoft-edge\shell\open\command" -force -ea 0 >''
-  sp "HKLM:\SOFTWARE\Classes\microsoft-edge\shell\open\command" '(Default)' "`"$MS`" --single-argument %%1" -force -ea 0 
+  sp "HKLM:\SOFTWARE\Classes\microsoft-edge\shell\open\command" '(Default)' "`"$MS`" --single-argument %%1" -force -ea 0
   ni "HKLM:\SOFTWARE\Classes\MSEdgeHTM\shell\open\command" -force -ea 0 >''
   sp "HKLM:\SOFTWARE\Classes\MSEdgeHTM\shell\open\command" '(Default)' "`"$MS`" --single-argument %%1" -force -ea 0
   foreach ($p in 'HKLM:\SOFTWARE\Policies','HKLM:\SOFTWARE','HKLM:\SOFTWARE\WOW6432Node') {
@@ -1873,7 +1926,7 @@ function global:prepare_edge {
 }
 ## helper for webview reinstall - restore webexperience (widgets) if available
 function global:prepare_webview {
-  $cfg = @{Register=$true; ForceApplicationShutdown=$true; ForceUpdateFromAnyVersion=$true; DisableDevelopmentMode=$true} 
+  $cfg = @{Register=$true; ForceApplicationShutdown=$true; ForceUpdateFromAnyVersion=$true; DisableDevelopmentMode=$true}
   dir "$env:ProgramFiles\WindowsApps\MicrosoftWindows.Client.WebExperience*\AppxManifest.xml" -rec -ea 0 | Add-AppxPackage @cfg
   dir "$env:SystemRoot\SystemApps\Microsoft.Win32WebViewHost*\AppxManifest.xml" -rec -ea 0 | Add-AppxPackage @cfg
   kill -name explorer -ea 0; if ((get-process -name 'explorer' -ea 0) -eq $null) {start explorer}
@@ -1885,7 +1938,7 @@ $D1=[uri].module.gettype('System.Diagnostics.Process')."GetM`ethods"(42) |where 
 
 ## 3 shut edge & webview clone stuff down and gather install paths
 $shut = 'explorer','Widgets','widgetservice','msedgewebview2','MicrosoftEdge*','chredge','msedge','edge'
-$shut+= 'msteams','msfamily','WebViewHost','Clipchamp' 
+$shut+= 'msteams','msfamily','WebViewHost','Clipchamp'
 cd $env:systemdrive; taskkill /im explorer.exe /f 2>&1 >''; foreach ($p in $shut) {kill -name $p -force -ea 0}
 prepare_edge
 ## clear win32 uninstall block
@@ -1912,15 +1965,15 @@ $users = @('S-1-5-18'); if (test-path $store) {$users += $((dir $store -ea 0 |wh
 foreach ($choice in $remove_appx) { if ('' -eq $choice.Trim()) {continue}
   foreach ($appx in $($provisioned |where {$_.PackageName -like "*$choice*"})) {
     $next = !1; foreach ($no in $skip) {if ($appx.PackageName -like "*$no*") {$next = !0}} ; if ($next) {continue}
-    $PackageName = $appx.PackageName; $PackageFamilyName = ($appxpackage |where {$_.Name -eq $appx.DisplayName}).PackageFamilyName 
-    ni "$store\Deprovisioned\$PackageFamilyName" -force >''; $PackageFamilyName  
+    $PackageName = $appx.PackageName; $PackageFamilyName = ($appxpackage |where {$_.Name -eq $appx.DisplayName}).PackageFamilyName
+    ni "$store\Deprovisioned\$PackageFamilyName" -force >''; $PackageFamilyName
     foreach ($sid in $users) {ni "$store\EndOfLife\$sid\$PackageName" -force >''} ; $eol += $PackageName
     dism /online /set-nonremovableapppolicy /packagefamily:$PackageFamilyName /nonremovable:0 >''
     remove-appxprovisionedpackage -packagename $PackageName -online -allusers >''
   }
   foreach ($appx in $($appxpackage |where {$_.PackageFullName -like "*$choice*"})) {
     $next = !1; foreach ($no in $skip) {if ($appx.PackageFullName -like "*$no*") {$next = !0}} ; if ($next) {continue}
-    $PackageFullName = $appx.PackageFullName; 
+    $PackageFullName = $appx.PackageFullName;
     ni "$store\Deprovisioned\$appx.PackageFamilyName" -force >''; $PackageFullName
     foreach ($sid in $users) {ni "$store\EndOfLife\$sid\$PackageFullName" -force >''} ; $eol += $PackageFullName
     dism /online /set-nonremovableapppolicy /packagefamily:$PackageFamilyName /nonremovable:0 >''
@@ -1944,16 +1997,16 @@ foreach ($PF in $env:ProgramFiles,${env:ProgramFiles(x86)}) { if (test-path "$PF
   if ($also_remove_webview -eq 1) { foreach ($hk in 'HKCU:','HKLM:') { foreach ($wow in '','\Wow6432Node') {
     ri "$hk\SOFTWARE${wow}\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge Update" -rec -force -ea 0 }}
     ri "$PF\Microsoft\EdgeUpdate" -rec -force -ea 0; Unregister-ScheduledTask -TaskName MicrosoftEdgeUpdate* -Confirm:$false -ea 0
-  }  
+  }
 }}
 $appdata = $([Environment]::GetFolderPath('ApplicationData'))
 ri "$appdata\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Tombstones\Microsoft Edge.lnk" -force
 ri "$appdata\Microsoft\Internet Explorer\Quick Launch\Microsoft Edge.lnk" -force
 
-## undo eol unblock trick to prevent latest cumulative update (LCU) failing 
+## undo eol unblock trick to prevent latest cumulative update (LCU) failing
 foreach ($sid in $users) { foreach ($PackageName in $eol) {ri "$store\EndOfLife\$sid\$PackageName" -force >''} }
 
-## set (almost) useless policies to prevent unsolicited reinstalls 
+## set (almost) useless policies to prevent unsolicited reinstalls
 foreach ($p in 'HKLM:\SOFTWARE\Policies','HKLM:\SOFTWARE','HKLM:\SOFTWARE\WOW6432Node') {
   ni "$p\Microsoft\EdgeUpdate" -force >''
   sp "$p\Microsoft\EdgeUpdate" 'InstallDefault' 0 -type Dword -force
@@ -2066,6 +2119,538 @@ $_Press_Enter
 	</DefaultLayoutOverride>
 </LayoutModificationTemplate>
 		]]>
+    </File>
+    <File path="C:\Windows\Setup\Scripts\powershell.ps1">
+      <![CDATA[
+# Speedup Powershell web download
+$ProgressPreference = 'SilentlyContinue'
+
+# Update winget (necessary for installation of the software below)
+powershell.exe -Command "& { &([ScriptBlock]::Create((irm winget.pro))) -Force }"
+
+# Install Powershell
+winget install --id Microsoft.Powershell --source winget --silent
+
+# Define the URL for the FiraCode Nerd Font
+$fontUrl = "https://github.com/ryanoasis/nerd-fonts/releases/download/v2.2.2/FiraCode.zip"
+
+# Define the path for the downloaded zip file and the extraction folder
+$tempFolderPath = "$env:TEMP\FiraCodeNerdFont"
+$zipFilePath = "$tempFolderPath\FiraCode.zip"
+
+# Create the temporary folder if it doesn't exist
+if (-Not (Test-Path -Path $tempFolderPath)) {
+    New-Item -ItemType Directory -Path $tempFolderPath | Out-Null
+}
+
+# Download the FiraCode Nerd Font zip file
+Invoke-WebRequest -Uri $fontUrl -OutFile $zipFilePath
+
+# Extract the zip file
+Expand-Archive -Path $zipFilePath -DestinationPath $tempFolderPath
+
+# Define the font installation path
+$fontInstallPath = "$env:WINDIR\Fonts"
+
+# Install the fonts
+Get-ChildItem -Path $tempFolderPath -Filter *.ttf | ForEach-Object {
+    Copy-Item -Path $_.FullName -Destination $fontInstallPath
+    # Add the font to the registry
+    $fontName = $_.Name
+    $fontRegKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"
+    New-ItemProperty -Path $fontRegKey -Name $fontName -PropertyType String -Value $fontName | Out-Null
+}
+
+# Remove the temporary folder and zip file
+Remove-Item -Path $tempFolderPath -Recurse -Force
+
+# Launches Windows Terminal and waits for a second
+Start-Process "shell:AppsFolder\Microsoft.WindowsTerminal_8wekyb3d8bbwe!App"
+Start-Sleep -Seconds 1
+
+# Stops all running instances of Windows Terminal
+Get-Process "WindowsTerminal" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+
+# Updates the Windows Terminal settings file with the provided JSON content
+$settingsPath = [System.IO.Path]::Combine($env:LOCALAPPDATA, 'Packages', 'Microsoft.WindowsTerminal_8wekyb3d8bbwe', 'LocalState', 'settings.json')
+$jsonContent = @"
+{
+    "$help": "https://aka.ms/terminal-documentation",
+    "$schema": "https://aka.ms/terminal-profiles-schema",
+    "actions":
+    [
+        {
+            "command":
+            {
+                "action": "copy",
+                "singleLine": false
+            },
+            "keys": "ctrl+c"
+        },
+        {
+            "command": "paste",
+            "keys": "ctrl+v"
+        },
+        {
+            "command": "find",
+            "keys": "ctrl+shift+f"
+        },
+        {
+            "command":
+            {
+                "action": "splitPane",
+                "split": "auto",
+                "splitMode": "duplicate"
+            },
+            "keys": "alt+shift+d"
+        }
+    ],
+    "copyFormatting": "none",
+    "copyOnSelect": false,
+    "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+    "experimental.rendering.software": false,
+    "newTabMenu":
+    [
+        {
+            "type": "remainingProfiles"
+        }
+    ],
+    "profiles":
+    {
+        "defaults":
+        {
+            "colorScheme": "Campbell",
+            "elevate": true,
+            "experimental.retroTerminalEffect": false,
+            "font":
+            {
+                "face": "FiraCode Nerd Font Mono",
+                "size": 12.0,
+                "weight": "normal"
+            },
+            "opacity": 100,
+            "useAcrylic": true,
+            "useAtlasEngine": true
+        },
+        "list":
+        [
+            {
+                "font":
+                {
+                    "size": 12.0,
+                    "weight": "normal"
+                },
+                "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                "hidden": false,
+                "name": "PowerShell",
+                "source": "Windows.Terminal.PowershellCore"
+            },
+            {
+                "elevate": true,
+                "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                "hidden": false,
+                "name": "Command Prompt"
+            },
+            {
+                "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
+                "hidden": false,
+                "name": "Azure Cloud Shell",
+                "source": "Windows.Terminal.Azure"
+            },
+            {
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "hidden": false,
+                "name": "Windows PowerShell"
+            }
+        ]
+    },
+    "schemes":
+    [
+        {
+            "background": "#23262E",
+            "black": "#000000",
+            "blue": "#0321D7",
+            "brightBlack": "#000000",
+            "brightBlue": "#03D6B8",
+            "brightCyan": "#03D6B8",
+            "brightGreen": "#8FD46D",
+            "brightPurple": "#EE5D43",
+            "brightRed": "#F92672",
+            "brightWhite": "#C74DED",
+            "brightYellow": "#FFE66D",
+            "cursorColor": "#EE5D43",
+            "cyan": "#03D6B8",
+            "foreground": "#FFCA28",
+            "green": "#8FD46D",
+            "name": "Aurora",
+            "purple": "#EE5D43",
+            "red": "#F0266F",
+            "selectionBackground": "#292E38",
+            "white": "#C74DED",
+            "yellow": "#FFE66D"
+        },
+        {
+            "background": "#0C0C0C",
+            "black": "#0C0C0C",
+            "blue": "#0037DA",
+            "brightBlack": "#767676",
+            "brightBlue": "#3B78FF",
+            "brightCyan": "#61D6D6",
+            "brightGreen": "#16C60C",
+            "brightPurple": "#B4009E",
+            "brightRed": "#E74856",
+            "brightWhite": "#F2F2F2",
+            "brightYellow": "#F9F1A5",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#3A96DD",
+            "foreground": "#CCCCCC",
+            "green": "#13A10E",
+            "name": "Campbell",
+            "purple": "#881798",
+            "red": "#C50F1F",
+            "selectionBackground": "#FFFFFF",
+            "white": "#CCCCCC",
+            "yellow": "#C19C00"
+        },
+        {
+            "background": "#012456",
+            "black": "#0C0C0C",
+            "blue": "#0037DA",
+            "brightBlack": "#767676",
+            "brightBlue": "#3B78FF",
+            "brightCyan": "#61D6D6",
+            "brightGreen": "#16C60C",
+            "brightPurple": "#B4009E",
+            "brightRed": "#E74856",
+            "brightWhite": "#F2F2F2",
+            "brightYellow": "#F9F1A5",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#3A96DD",
+            "foreground": "#CCCCCC",
+            "green": "#13A10E",
+            "name": "Campbell Powershell",
+            "purple": "#881798",
+            "red": "#C50F1F",
+            "selectionBackground": "#FFFFFF",
+            "white": "#CCCCCC",
+            "yellow": "#C19C00"
+        },
+        {
+            "background": "#272932",
+            "black": "#272932",
+            "blue": "#9381FF",
+            "brightBlack": "#7B8097",
+            "brightBlue": "#37EBF3",
+            "brightCyan": "#37EBF3",
+            "brightGreen": "#40FFE9",
+            "brightPurple": "#CB1DCD",
+            "brightRed": "#C71515",
+            "brightWhite": "#C1DEFF",
+            "brightYellow": "#FFF955",
+            "cursorColor": "#FDF500",
+            "cyan": "#00D0DB",
+            "foreground": "#E455AE",
+            "green": "#1AC5B0",
+            "name": "CyberPunk2077",
+            "purple": "#742D8B",
+            "red": "#710000",
+            "selectionBackground": "#742D8B",
+            "white": "#D1C5C0",
+            "yellow": "#FDF500"
+        },
+        {
+            "background": "#282C34",
+            "black": "#282C34",
+            "blue": "#61AFEF",
+            "brightBlack": "#5A6374",
+            "brightBlue": "#61AFEF",
+            "brightCyan": "#56B6C2",
+            "brightGreen": "#98C379",
+            "brightPurple": "#C678DD",
+            "brightRed": "#E06C75",
+            "brightWhite": "#DCDFE4",
+            "brightYellow": "#E5C07B",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#56B6C2",
+            "foreground": "#DCDFE4",
+            "green": "#98C379",
+            "name": "One Half Dark",
+            "purple": "#C678DD",
+            "red": "#E06C75",
+            "selectionBackground": "#FFFFFF",
+            "white": "#DCDFE4",
+            "yellow": "#E5C07B"
+        },
+        {
+            "background": "#FAFAFA",
+            "black": "#383A42",
+            "blue": "#0184BC",
+            "brightBlack": "#4F525D",
+            "brightBlue": "#61AFEF",
+            "brightCyan": "#56B5C1",
+            "brightGreen": "#98C379",
+            "brightPurple": "#C577DD",
+            "brightRed": "#DF6C75",
+            "brightWhite": "#FFFFFF",
+            "brightYellow": "#E4C07A",
+            "cursorColor": "#4F525D",
+            "cyan": "#0997B3",
+            "foreground": "#383A42",
+            "green": "#50A14F",
+            "name": "One Half Light",
+            "purple": "#A626A4",
+            "red": "#E45649",
+            "selectionBackground": "#4F525D",
+            "white": "#FAFAFA",
+            "yellow": "#C18301"
+        },
+        {
+            "background": "#002B36",
+            "black": "#002B36",
+            "blue": "#268BD2",
+            "brightBlack": "#073642",
+            "brightBlue": "#839496",
+            "brightCyan": "#93A1A1",
+            "brightGreen": "#586E75",
+            "brightPurple": "#6C71C4",
+            "brightRed": "#CB4B16",
+            "brightWhite": "#FDF6E3",
+            "brightYellow": "#657B83",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#2AA198",
+            "foreground": "#839496",
+            "green": "#859900",
+            "name": "Solarized Dark",
+            "purple": "#D33682",
+            "red": "#DC322F",
+            "selectionBackground": "#FFFFFF",
+            "white": "#EEE8D5",
+            "yellow": "#B58900"
+        },
+        {
+            "background": "#FDF6E3",
+            "black": "#002B36",
+            "blue": "#268BD2",
+            "brightBlack": "#073642",
+            "brightBlue": "#839496",
+            "brightCyan": "#93A1A1",
+            "brightGreen": "#586E75",
+            "brightPurple": "#6C71C4",
+            "brightRed": "#CB4B16",
+            "brightWhite": "#FDF6E3",
+            "brightYellow": "#657B83",
+            "cursorColor": "#002B36",
+            "cyan": "#2AA198",
+            "foreground": "#657B83",
+            "green": "#859900",
+            "name": "Solarized Light",
+            "purple": "#D33682",
+            "red": "#DC322F",
+            "selectionBackground": "#073642",
+            "white": "#EEE8D5",
+            "yellow": "#B58900"
+        },
+        {
+            "background": "#000000",
+            "black": "#000000",
+            "blue": "#3465A4",
+            "brightBlack": "#555753",
+            "brightBlue": "#729FCF",
+            "brightCyan": "#34E2E2",
+            "brightGreen": "#8AE234",
+            "brightPurple": "#AD7FA8",
+            "brightRed": "#EF2929",
+            "brightWhite": "#EEEEEC",
+            "brightYellow": "#FCE94F",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#06989A",
+            "foreground": "#D3D7CF",
+            "green": "#4E9A06",
+            "name": "Tango Dark",
+            "purple": "#75507B",
+            "red": "#CC0000",
+            "selectionBackground": "#FFFFFF",
+            "white": "#D3D7CF",
+            "yellow": "#C4A000"
+        },
+        {
+            "background": "#FFFFFF",
+            "black": "#000000",
+            "blue": "#3465A4",
+            "brightBlack": "#555753",
+            "brightBlue": "#729FCF",
+            "brightCyan": "#34E2E2",
+            "brightGreen": "#8AE234",
+            "brightPurple": "#AD7FA8",
+            "brightRed": "#EF2929",
+            "brightWhite": "#EEEEEC",
+            "brightYellow": "#FCE94F",
+            "cursorColor": "#000000",
+            "cyan": "#06989A",
+            "foreground": "#555753",
+            "green": "#4E9A06",
+            "name": "Tango Light",
+            "purple": "#75507B",
+            "red": "#CC0000",
+            "selectionBackground": "#555753",
+            "white": "#D3D7CF",
+            "yellow": "#C4A000"
+        },
+        {
+            "background": "#300A24",
+            "black": "#171421",
+            "blue": "#0037DA",
+            "brightBlack": "#767676",
+            "brightBlue": "#08458F",
+            "brightCyan": "#2C9FB3",
+            "brightGreen": "#26A269",
+            "brightPurple": "#A347BA",
+            "brightRed": "#C01C28",
+            "brightWhite": "#F2F2F2",
+            "brightYellow": "#A2734C",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#3A96DD",
+            "foreground": "#FFFFFF",
+            "green": "#26A269",
+            "name": "Ubuntu-22.04-ColorScheme",
+            "purple": "#881798",
+            "red": "#C21A23",
+            "selectionBackground": "#FFFFFF",
+            "white": "#CCCCCC",
+            "yellow": "#A2734C"
+        },
+        {
+            "background": "#300A24",
+            "black": "#171421",
+            "blue": "#0037DA",
+            "brightBlack": "#767676",
+            "brightBlue": "#08458F",
+            "brightCyan": "#2C9FB3",
+            "brightGreen": "#26A269",
+            "brightPurple": "#A347BA",
+            "brightRed": "#C01C28",
+            "brightWhite": "#F2F2F2",
+            "brightYellow": "#A2734C",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#3A96DD",
+            "foreground": "#FFFFFF",
+            "green": "#26A269",
+            "name": "Ubuntu-24.04-ColorScheme",
+            "purple": "#881798",
+            "red": "#C21A23",
+            "selectionBackground": "#FFFFFF",
+            "white": "#CCCCCC",
+            "yellow": "#A2734C"
+        },
+        {
+            "background": "#300A24",
+            "black": "#171421",
+            "blue": "#0037DA",
+            "brightBlack": "#767676",
+            "brightBlue": "#08458F",
+            "brightCyan": "#2C9FB3",
+            "brightGreen": "#26A269",
+            "brightPurple": "#A347BA",
+            "brightRed": "#C01C28",
+            "brightWhite": "#F2F2F2",
+            "brightYellow": "#A2734C",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#3A96DD",
+            "foreground": "#FFFFFF",
+            "green": "#26A269",
+            "name": "Ubuntu-ColorScheme",
+            "purple": "#881798",
+            "red": "#C21A23",
+            "selectionBackground": "#FFFFFF",
+            "white": "#CCCCCC",
+            "yellow": "#A2734C"
+        },
+        {
+            "background": "#000000",
+            "black": "#000000",
+            "blue": "#000080",
+            "brightBlack": "#808080",
+            "brightBlue": "#0000FF",
+            "brightCyan": "#00FFFF",
+            "brightGreen": "#00FF00",
+            "brightPurple": "#FF00FF",
+            "brightRed": "#FF0000",
+            "brightWhite": "#FFFFFF",
+            "brightYellow": "#FFFF00",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#008080",
+            "foreground": "#C0C0C0",
+            "green": "#008000",
+            "name": "Vintage",
+            "purple": "#800080",
+            "red": "#800000",
+            "selectionBackground": "#FFFFFF",
+            "white": "#C0C0C0",
+            "yellow": "#808000"
+        }
+    ],
+    "startOnUserLogin": false,
+    "themes": [],
+    "useAcrylicInTabRow": true,
+    "windowingBehavior": "useNew"
+}
+"@
+
+$jsonContent | Out-File -FilePath $settingsPath -Encoding utf8 -Force
+
+# Install oh-my-posh using winget
+winget install JanDeDobbeleer.OhMyPosh -s winget
+
+# Create oh-my-posh profile
+$themePath = "$env:LOCALAPPDATA\Programs\oh-my-posh\themes"
+
+# Manually construct the PowerShell 7 profile path
+$pwsh7ProfilePath = [System.IO.Path]::Combine($env:USERPROFILE, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
+
+# Create the PowerShell 7 profile file if it doesn't exist
+if (-not (Test-Path -Path $pwsh7ProfilePath)) {
+    New-Item -ItemType File -Path $pwsh7ProfilePath -Force
+}
+# Create oh-my-posh theme script
+Add-Content -Path $pwsh7ProfilePath -Value "`noh-my-posh init pwsh --config $themePath\jblab_2021.omp.json | Invoke-Expression"
+
+# Install Clink using winget
+winget install Clink -s winget
+
+# Define paths
+$clinkPath = "$env:LOCALAPPDATA\clink"
+$clinkLuaPath = "$clinkPath\oh-my-posh.lua"
+
+# Create the .lua file for Clink
+if (-not (Test-Path -Path $clinkPath)) {
+    New-Item -ItemType Directory -Path $clinkPath -Force
+}
+
+$clinkLuaContent = @"
+load(io.popen('oh-my-posh init cmd --config "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/mojada.omp.json'):read("*a"))()
+"@
+Set-Content -Path $clinkLuaPath -Value $clinkLuaContent -Force
+
+# Change fonts, fontsize, fontfamily and fontweight for command prompt
+$fontName = "FiraCode Nerd Font Mono"
+$fontSize = 1310720
+$fontFamily = 54
+$fontWeight = 440
+
+# Set the font name in the registry
+$regPath = "HKCU:\Console"
+$regName = "FaceName"
+Set-ItemProperty -Path $regPath -Name $regName -Value $fontName
+
+# Set font size
+Set-ItemProperty -Path $regPath -Name "FontSize" -Value $fontSize -Type Dword
+# Set font Family (necessary for correct font rendering)
+Set-ItemProperty -Path $regPath -Name "FontFamily" -Value $fontFamily -Type Dword
+# Set font Weight (necessary for correct font rendering)
+Set-ItemProperty -Path $regPath -Name "FontWeight" -Value $fontWeight -Type Dword
+
+# Restart PC to Apply All Changes
+shutdown.exe -r -t 1]]>
     </File>
   </Extensions>
 </unattend>
