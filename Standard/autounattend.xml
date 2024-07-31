@@ -103,6 +103,21 @@
         </RunSynchronousCommand>
         <RunSynchronousCommand wcm:action="add">
           <Order>9</Order>
+          <Description>Executes the securedelete Powershell Script</Description>
+          <Path>powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\securedelete.ps1' -Raw | Invoke-Expression;"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>10</Order>
+          <Description>Executes the notepad++ Powershell Script</Description>
+          <Path>powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\notepad++.ps1' -Raw | Invoke-Expression;"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>11</Order>
+          <Description>Executes the fonts Powershell Script</Description>
+          <Path>powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\fonts.ps1' -Raw | Invoke-Expression;"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>12</Order>
           <Description>Edge</Description>
           <Path>cmd.exe /c "C:\Windows\Setup\Scripts\edgeremoval.bat &gt;&gt;"C:\Windows\Setup\Scripts\edgeremoval.log" 2&gt;&amp;1"</Path>
         </RunSynchronousCommand>
@@ -155,7 +170,7 @@
         </SynchronousCommand>
         <SynchronousCommand wcm:action="add">
           <Order>2</Order>
-          <CommandLine>cmd.exe /c "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\powershell.ps1' -Raw | Invoke-Expression;" &gt;&gt;"C:\Windows\Setup\Scripts\powershell-01.log" 2&gt;&amp;1"</CommandLine>
+          <CommandLine>cmd.exe /c "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\powershell.ps1' -Raw | Invoke-Expression;" &gt;&gt;"C:\Windows\Setup\Scripts\powershell-01.log" 2&gt;&amp;1"</CommandLine>
         </SynchronousCommand>
         </FirstLogonCommands>
     </component>
@@ -202,7 +217,7 @@ foreach( $file in $Document.unattend.Extensions.File ) {
   'Microsoft.WindowsMaps';
   'Microsoft.ZuneVideo';
   'Microsoft.BingNews';
-  #'Microsoft.WindowsNotepad';
+  'Microsoft.WindowsNotepad';
   'Microsoft.MicrosoftOfficeHub';
   'Microsoft.Office.OneNote';
   'Microsoft.OutlookForWindows';
@@ -251,7 +266,7 @@ Where-Object -FilterScript {
   ($_.Name -split '~')[0] -in @(
     'Browser.InternetExplorer';
     'MathRecognizer';
-    #'Microsoft.Windows.Notepad';
+    'Microsoft.Windows.Notepad';
     'OpenSSH.Client';
     #'Microsoft.Windows.MSPaint';
     #'Microsoft.Windows.PowerShell.ISE';
@@ -747,109 +762,6 @@ Where-Object -Property 'FeatureName' -In -Value @(
 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  # Download Sysinternals Secure Delete tool
-  # Define the URL for the Sysinternals Secure Delete tool
-  $url = "https://download.sysinternals.com/files/SDelete.zip"
-  # Define the local path where the zip file will be downloaded
-  $zipPath = "$env:TEMP\SDelete.zip"
-  # Define the path where the zip file will be extracted
-  $extractPath = "$env:TEMP\SDelete"
-  # Define the path to the SysWOW64 directory for the 64-bit executable
-  $destinationPath64 = "$env:SystemRoot\SysWOW64\sdelete64.exe"
-  # Define the path to the System32 directory for the 32-bit executable
-  $destinationPath32 = "$env:SystemRoot\System32\sdelete.exe"
-
-  # Download the zip file
-  Invoke-WebRequest -Uri $url -OutFile $zipPath
-
-  # Extract the zip file
-  Expand-Archive -Path $zipPath -DestinationPath $extractPath
-
-  # Move the 64-bit sdelete to the SysWOW64 directory
-  Move-Item -Path "$extractPath\sdelete64.exe" -Destination $destinationPath64 -Force
-
-  # Move the 32-bit sdelete to the System32 directory
-  Move-Item -Path "$extractPath\sdelete.exe" -Destination $destinationPath32 -Force
-
-  # Clean up: remove the downloaded zip file and extracted contents
-  Remove-Item -Path $zipPath -Force
-  Remove-Item -Path $extractPath -Recurse -Force
-
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  # Create SecureDelete.bat on "%SystemRoot%\SysWOW64"
-  # Script that uses SecureDelete on the selected file/dir from context menu
-  # Ensure the script is running as administrator
-  If (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
-  {
-      Write-Error "This script needs to be run as administrator."
-      Pause
-      Exit
-  }
-
-  # Define the path for the new PowerShell script
-  $secureDeletePath = Join-Path $env:SystemRoot "SysWOW64\securedelete.ps1"
-
-  # Create the new PowerShell script with the provided content
-  $psContent = @"
-  # PowerShell script for secure deletion
-
-  param (
-      [string[]] `$Items
-  )
-
-  # Check if any arguments were passed and perform the secure delete operation
-  If (`$Items.Length -eq 0) {
-      # No arguments passed, set the default path to $Recycle.Bin
-      `$Items = @('C:\`$Recycle.Bin\*')
-      `$message = "Permanently deleting all items in the Recycle Bin.``nAre you sure you want to continue?"
-  } else {
-      `$message = "Permanently deleting: `$Items``n``nAre you sure you want to continue?"
-  }
-
-  # Function to show a confirmation dialog
-  function Show-ConfirmationDialog {
-      param (
-          [string] `$Message
-      )
-      Add-Type -AssemblyName System.Windows.Forms
-      `$result = [System.Windows.Forms.MessageBox]::Show(`$Message, 'Confirm Secure Delete', [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Exclamation)
-      return (`$result -eq [System.Windows.Forms.DialogResult]::Yes)
-  }
-
-  # Check if sdelete.exe exists
-  `$sdeletePath64 = Join-Path `$env:SystemRoot "SysWOW64\sdelete64.exe"
-  `$sdeletePath32 = Join-Path `$env:SystemRoot "System32\sdelete.exe"
-
-  if (Test-Path `$sdeletePath64) {
-      `$sdelete = `$sdeletePath64
-  } elseif (Test-Path `$sdeletePath32) {
-      `$sdelete = `$sdeletePath32
-  } else {
-      Write-Error "sdelete not found."
-      Exit 1
-  }
-
-  # Confirm action
-  if (-not (Show-ConfirmationDialog -Message `$message)) {
-      Write-Host "Operation cancelled."
-      Exit 1
-  }
-
-  # Perform the secure delete operation
-  foreach (`$item in `$Items) {
-      Write-Host "Securely deleting: `$item"
-      & `$sdelete -p 1 -s -r -q `$item
-  }
-
-  Write-Host "Secure delete completed."
-"@
-
-  Write-Output "Creating securedelete.ps1 at $secureDeletePath"
-  $psContent | Out-File -FilePath $secureDeletePath -Force -Encoding UTF8
-
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
   # Clean empty tasks of TaskManager
   # Define the registry path
   $baseRegistryPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\Microsoft\Windows"
@@ -877,8 +789,6 @@ Where-Object -Property 'FeatureName' -In -Value @(
           Write-Error "Failed to remove registry key: $registryPath. Error: $_"
       }
   }
-
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   Stop-Transcript]]>
     </File>
@@ -1864,8 +1774,11 @@ reg.exe add "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\She
 :: Disable Combine Taskbar buttons and hide labels
 reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoTaskGrouping /t REG_DWORD /d 1 /f
 
-:: Restart PC to Apply All Changes
-:: shutdown /r -t 1]]>
+:: Stop Windows Explorer
+taskkill /f /im explorer.exe
+
+:: Start Windows Explorer
+start explorer.exe]]>
     </File>
     <!--Additional Edge Removal Script by Chris Titus & AveYo to Ensure Complete Removal-->
     <File path="C:\Windows\Setup\Scripts\edgeremoval.bat">
@@ -2122,47 +2035,33 @@ $_Press_Enter
     </File>
     <File path="C:\Windows\Setup\Scripts\powershell.ps1">
       <![CDATA[
+# This script runs on first logon due to usage of winget that
+# needs user accounts to be created to function
+
+Add-Type -AssemblyName System.Windows.Forms
+
+# Function to show a non-blocking message box that stays on top
+function Show-RestartMessage {
+    Start-Job -ScriptBlock {
+        Add-Type -AssemblyName System.Windows.Forms
+
+        # Show the message box with the DefaultDesktopOnly option to keep it on top
+        [System.Windows.Forms.MessageBox]::Show(
+            "Background changes are made, system will restart in a few moments.",
+            "Restart Notification",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Information,
+            [System.Windows.Forms.MessageBoxDefaultButton]::Button1,
+            [System.Windows.Forms.MessageBoxOptions]::DefaultDesktopOnly
+        )
+    }
+}
+
 # Speedup Powershell web download
 $ProgressPreference = 'SilentlyContinue'
 
 # Update winget (necessary for installation of the software below)
-powershell.exe -Command "& { &([ScriptBlock]::Create((irm winget.pro))) -Force }"
-
-# Install Powershell
-winget install --id Microsoft.Powershell --source winget --silent
-
-# Define the URL for the FiraCode Nerd Font
-$fontUrl = "https://github.com/ryanoasis/nerd-fonts/releases/download/v2.2.2/FiraCode.zip"
-
-# Define the path for the downloaded zip file and the extraction folder
-$tempFolderPath = "$env:TEMP\FiraCodeNerdFont"
-$zipFilePath = "$tempFolderPath\FiraCode.zip"
-
-# Create the temporary folder if it doesn't exist
-if (-Not (Test-Path -Path $tempFolderPath)) {
-    New-Item -ItemType Directory -Path $tempFolderPath | Out-Null
-}
-
-# Download the FiraCode Nerd Font zip file
-Invoke-WebRequest -Uri $fontUrl -OutFile $zipFilePath
-
-# Extract the zip file
-Expand-Archive -Path $zipFilePath -DestinationPath $tempFolderPath
-
-# Define the font installation path
-$fontInstallPath = "$env:WINDIR\Fonts"
-
-# Install the fonts
-Get-ChildItem -Path $tempFolderPath -Filter *.ttf | ForEach-Object {
-    Copy-Item -Path $_.FullName -Destination $fontInstallPath
-    # Add the font to the registry
-    $fontName = $_.Name
-    $fontRegKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"
-    New-ItemProperty -Path $fontRegKey -Name $fontName -PropertyType String -Value $fontName | Out-Null
-}
-
-# Remove the temporary folder and zip file
-Remove-Item -Path $tempFolderPath -Recurse -Force
+powershell.exe -ExecutionPolicy Bypass -Command "& { &([ScriptBlock]::Create((irm winget.pro))) -Force }"
 
 # Launches Windows Terminal and waits for a second
 Start-Process "shell:AppsFolder\Microsoft.WindowsTerminal_8wekyb3d8bbwe!App"
@@ -2170,6 +2069,15 @@ Start-Sleep -Seconds 1
 
 # Stops all running instances of Windows Terminal
 Get-Process "WindowsTerminal" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+
+# Kill explorer.exe and pauses
+Start-Process -FilePath "cmd.exe" -ArgumentList "/c taskkill /f /im explorer.exe" -Wait
+
+# Call the function to display a message box
+Show-RestartMessage
+
+# Install Powershell 7
+winget install --id Microsoft.Powershell --source winget --silent
 
 # Updates the Windows Terminal settings file with the provided JSON content
 $settingsPath = [System.IO.Path]::Combine($env:LOCALAPPDATA, 'Packages', 'Microsoft.WindowsTerminal_8wekyb3d8bbwe', 'LocalState', 'settings.json')
@@ -2650,7 +2558,237 @@ Set-ItemProperty -Path $regPath -Name "FontFamily" -Value $fontFamily -Type Dwor
 Set-ItemProperty -Path $regPath -Name "FontWeight" -Value $fontWeight -Type Dword
 
 # Restart PC to Apply All Changes
-shutdown.exe -r -t 1]]>
+shutdown.exe -r -t 5]]>
+    </File>
+    <File path="C:\Windows\Setup\Scripts\securedelete.ps1">
+      <![CDATA[
+# Download Sysinternals Secure Delete tool
+# Define the URL for the Sysinternals Secure Delete tool
+$url = "https://download.sysinternals.com/files/SDelete.zip"
+# Define the local path where the zip file will be downloaded
+$zipPath = "$env:TEMP\SDelete.zip"
+# Define the path where the zip file will be extracted
+$extractPath = "$env:TEMP\SDelete"
+# Define the path to the SysWOW64 directory for the 64-bit executable
+$destinationPath64 = "$env:SystemRoot\SysWOW64\sdelete64.exe"
+# Define the path to the System32 directory for the 32-bit executable
+$destinationPath32 = "$env:SystemRoot\System32\sdelete.exe"
+
+# Download the zip file
+Invoke-WebRequest -Uri $url -OutFile $zipPath
+
+# Extract the zip file
+Expand-Archive -Path $zipPath -DestinationPath $extractPath
+
+# Move the 64-bit sdelete to the SysWOW64 directory
+Move-Item -Path "$extractPath\sdelete64.exe" -Destination $destinationPath64 -Force
+
+# Move the 32-bit sdelete to the System32 directory
+Move-Item -Path "$extractPath\sdelete.exe" -Destination $destinationPath32 -Force
+
+# Clean up: remove the downloaded zip file and extracted contents
+Remove-Item -Path $zipPath -Force
+Remove-Item -Path $extractPath -Recurse -Force
+
+# Create SecureDelete.bat on "%SystemRoot%\SysWOW64"
+# Script that uses SecureDelete on the selected file/dir from context menu
+# Ensure the script is running as administrator
+If (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
+{
+    Write-Error "This script needs to be run as administrator."
+    Pause
+    Exit
+}
+
+# Define the path for the new PowerShell script
+$secureDeletePath = Join-Path $env:SystemRoot "SysWOW64\securedelete.ps1"
+
+# Create the new PowerShell script with the provided content
+$psContent = @"
+# PowerShell script for secure deletion
+
+param (
+    [string[]] `$Items
+)
+
+# Check if any arguments were passed and perform the secure delete operation
+If (`$Items.Length -eq 0) {
+    # No arguments passed, set the default path to $Recycle.Bin
+    `$Items = @('C:\`$Recycle.Bin\*')
+    `$message = "Permanently deleting all items in the Recycle Bin.``nAre you sure you want to continue?"
+} else {
+    `$message = "Permanently deleting: `$Items``n``nAre you sure you want to continue?"
+}
+
+# Function to show a confirmation dialog
+function Show-ConfirmationDialog {
+    param (
+        [string] `$Message
+    )
+    Add-Type -AssemblyName System.Windows.Forms
+    `$result = [System.Windows.Forms.MessageBox]::Show(`$Message, 'Confirm Secure Delete', [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Exclamation)
+    return (`$result -eq [System.Windows.Forms.DialogResult]::Yes)
+}
+
+# Check if sdelete.exe exists
+`$sdeletePath64 = Join-Path `$env:SystemRoot "SysWOW64\sdelete64.exe"
+`$sdeletePath32 = Join-Path `$env:SystemRoot "System32\sdelete.exe"
+
+if (Test-Path `$sdeletePath64) {
+    `$sdelete = `$sdeletePath64
+} elseif (Test-Path `$sdeletePath32) {
+    `$sdelete = `$sdeletePath32
+} else {
+    Write-Error "sdelete not found."
+    Exit 1
+}
+
+# Confirm action
+if (-not (Show-ConfirmationDialog -Message `$message)) {
+    Write-Host "Operation cancelled."
+    Exit 1
+}
+
+# Perform the secure delete operation
+foreach (`$item in `$Items) {
+    Write-Host "Securely deleting: `$item"
+    & `$sdelete -p 1 -s -r -q `$item
+}
+
+Write-Host "Secure delete completed."
+"@
+
+Write-Output "Creating securedelete.ps1 at $secureDeletePath"
+$psContent | Out-File -FilePath $secureDeletePath -Force -Encoding UTF8
+      ]]>
+    </File>
+    <File path="C:\Windows\Setup\Scripts\notepad++.ps1">
+      <![CDATA[
+# Function to get the latest Notepad++ release download URL
+function Get-LatestNotepadPlusPlusReleaseUrl {
+    $apiUrl = "https://api.github.com/repos/notepad-plus-plus/notepad-plus-plus/releases/latest"
+    $releaseInfo = Invoke-RestMethod -Uri $apiUrl -Headers @{ "User-Agent" = "PowerShell Script" }
+    $installerAsset = $releaseInfo.assets | Where-Object { $_.name -like "*Installer.x64.exe" }
+    return $installerAsset.browser_download_url
+}
+
+# Get the latest Notepad++ release URL
+$installerUrl = Get-LatestNotepadPlusPlusReleaseUrl
+
+# Define the path to the temporary directory
+$tempDir = [System.IO.Path]::GetTempPath()
+$installerPath = Join-Path -Path $tempDir -ChildPath "npp_installer.exe"
+
+# Download the Notepad++ installer to the temporary directory
+Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath
+
+# Run the installer with silent mode
+Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait
+
+# Unregister the Notepad++ context menu shell integration
+$contextMenuDllPath = "C:\Program Files\Notepad++\contextMenu\NppShell.dll"
+if (Test-Path $contextMenuDllPath) {
+    Start-Process -FilePath "regsvr32.exe" -ArgumentList "/u", "/s", "`"$contextMenuDllPath`"" -Wait -NoNewWindow
+}
+
+# Clean up by deleting the installer from the temporary directory
+Remove-Item -Path $installerPath -Force
+
+# Credits:https://github.com/DanysysTeam/PS-SFTA
+# Change File Associations
+
+powershell -ExecutionPolicy Bypass -command "& { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+ Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/DanysysTeam/PS-SFTA/master/SFTA.ps1'));
+  Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.txt'; Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.json';
+    Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.log'; Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.ini';
+      Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.xml' }"
+
+# Create a notepad++ entry to "New" context submenu
+# Define registry paths and keys
+$notepadPlusPlusPath = "C:\Program Files\Notepad++\notepad++.exe"
+$progID = "SFTA.notepad++.txt"
+$description = "Notepad++ Document"
+
+# Ensure ProgID entry for Notepad++ text file exists
+try {
+    if (-not (Test-Path -Path "HKLM:\Software\Classes\$progID")) {
+        New-Item -Path "HKLM:\Software\Classes\$progID" -Force | Out-Null
+        Set-ItemProperty -Path "HKLM:\Software\Classes\$progID" -Name "(Default)" -Value $description
+        New-Item -Path "HKLM:\Software\Classes\$progID\DefaultIcon" -Force | Out-Null
+        Set-ItemProperty -Path "HKLM:\Software\Classes\$progID\DefaultIcon" -Name "(Default)" -Value "`"$notepadPlusPlusPath`",0"
+        New-Item -Path "HKLM:\Software\Classes\$progID\shell\open\command" -Force | Out-Null
+        Set-ItemProperty -Path "HKLM:\Software\Classes\$progID\shell\open\command" -Name "(Default)" -Value "`"$notepadPlusPlusPath`" `"%1`""
+    }
+} catch {
+    Write-Host "Error ensuring ProgID entry: $_" -ForegroundColor Red
+}
+
+# Add entry to the "New" menu
+try {
+    New-Item -Path "HKLM:\Software\Classes\.txt" -Force | Out-Null
+    Set-ItemProperty -Path "HKLM:\Software\Classes\.txt" -Name "(Default)" -Value $progID
+
+    New-Item -Path "HKLM:\Software\Classes\.txt\ShellNew" -Force | Out-Null
+    Set-ItemProperty -Path "HKLM:\Software\Classes\.txt\ShellNew" -Name "NullFile" -Value ""
+} catch {
+    Write-Host "Error adding entry to the New menu: $_" -ForegroundColor Red
+}
+      ]]>
+    </File>
+    <File path="C:\Windows\Setup\Scripts\fonts.ps1">
+      <![CDATA[
+# Define the GitHub repository and API endpoint
+$repoOwner = "ryanoasis"
+$repoName = "nerd-fonts"
+$apiUrl = "https://api.github.com/repos/$repoOwner/$repoName/releases/latest"
+
+# Fetch the latest release information
+$releaseInfo = Invoke-RestMethod -Uri $apiUrl -Headers @{ "User-Agent" = "PowerShell" }
+
+# Extract the download URL for FiraCode.zip
+$asset = $releaseInfo.assets | Where-Object { $_.name -like "FiraCode.zip" }
+if ($asset -ne $null) {
+    $fontUrl = $asset.browser_download_url
+    Write-Host "Latest FiraCode Nerd Font URL: $fontUrl"
+} else {
+    Write-Host "FiraCode.zip not found in the latest release assets."
+    exit 1
+}
+
+# Define the local path to save the file
+$zipFilePath = "$env:USERPROFILE\Downloads\FiraCode.zip"
+
+# Define the path for the downloaded zip file and the extraction folder
+$tempFolderPath = "$env:TEMP\FiraCodeNerdFont"
+$zipFilePath = "$tempFolderPath\FiraCode.zip"
+
+# Create the temporary folder if it doesn't exist
+if (-Not (Test-Path -Path $tempFolderPath)) {
+    New-Item -ItemType Directory -Path $tempFolderPath | Out-Null
+}
+
+# Download the font
+Write-Host "Downloading FiraCode Nerd Font..."
+Invoke-WebRequest -Uri $fontUrl -OutFile $zipFilePath
+
+# Extract the zip file
+Expand-Archive -Path $zipFilePath -DestinationPath $tempFolderPath
+
+# Define the font installation path
+$fontInstallPath = "$env:WINDIR\Fonts"
+
+# Install the fonts
+Get-ChildItem -Path $tempFolderPath -Filter *.ttf | ForEach-Object {
+    Copy-Item -Path $_.FullName -Destination $fontInstallPath
+    # Add the font to the registry
+    $fontName = $_.Name
+    $fontRegKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"
+    New-ItemProperty -Path $fontRegKey -Name $fontName -PropertyType String -Value $fontName | Out-Null
+}
+
+# Remove the temporary folder and zip file
+Remove-Item -Path $tempFolderPath -Recurse -Force
+      ]]>
     </File>
   </Extensions>
 </unattend>
