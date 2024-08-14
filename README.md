@@ -1,5 +1,78 @@
 # Memory’s Tech Tips’ Unattended Windows Installation
 
+## Fork features
+
+* **File Explorer**
+  * Add Folder under ThisPC\
+  https://www.elevenforum.com/t/add-or-remove-folders-under-this-pc-in-file-explorer-in-windows-11.7122/
+
+  * Remove Gallery in File Explorer navigation pane\
+  https://www.elevenforum.com/t/add-or-remove-gallery-in-file-explorer-navigation-pane-in-windows-11.14178/
+
+  * Remove Home in File Explorer navigation pane\
+  https://www.elevenforum.com/t/add-or-remove-home-in-navigation-pane-of-file-explorer-in-windows-11.2449/
+
+  * Remove Frequent Folders in Quick Access\
+  https://www.elevenforum.com/t/add-or-remove-frequent-folders-in-quick-access-in-windows-11.6858/
+
+  * Disable Show Files from Office.com in File Explorer\
+  https://www.elevenforum.com/t/enable-or-disable-show-files-from-office-com-in-file-explorer-home-in-windows-11.6886/
+
+  * Show Hidden Files, Folders, and Drives\
+  https://www.elevenforum.com/t/show-hidden-files-folders-and-drives-in-windows-11.4962/
+
+  * Disable Folder Thumbnail Previews without Disabling File Thumbnail Previews\
+  https://www.elevenforum.com/t/disable-folder-thumbnail-previews-without-disabling-file-thumbnail-previews-in-windows-11.9415/
+
+* **Context Menu**
+
+  * Add SDelete with a context menu entry\
+  https://learn.microsoft.com/en-us/sysinternals/downloads/sdelete \
+  https://www.tenforums.com/tutorials/124353-add-secure-delete-recycle-bin-context-menu-windows-10-a.html 
+
+  * Add Change Owner to Context Menu\
+  https://www.elevenforum.com/t/add-change-owner-to-context-menu-in-windows-11.9181/
+
+  * Add "Reset Permissions" to Context Menu\
+  https://www.elevenforum.com/t/add-reset-permissions-to-context-menu-in-windows-11.21237/
+
+  * Add Restart Explorer Context Menu\
+  https://www.elevenforum.com/t/add-restart-explorer-context-menu-in-windows-11.667/
+
+  * Add Explorer Panes Context Menu\
+  https://www.tenforums.com/tutorials/76111-navigation-pane-add-context-menu-windows-10-a.html \
+  https://www.tenforums.com/tutorials/75915-preview-pane-add-context-menu-windows-10-a.html \
+  https://www.tenforums.com/tutorials/75922-details-pane-add-context-menu-windows-10-a.html
+
+  * Remove "Customize this folder" on Context Menu and Properties\
+  https://www.elevenforum.com/t/add-or-remove-customize-this-folder-on-context-menu-and-properties-in-windows-11.9395/
+
+  * Remove Pin to Quick access Context Menu\
+  https://www.elevenforum.com/t/add-or-remove-pin-to-quick-access-context-menu-in-windows-11.2807/
+
+  * Remove Previous Versions from Context Menu and Propertie\
+  https://www.elevenforum.com/t/add-or-remove-previous-versions-from-context-menu-and-properties-in-windows-11.9391/
+
+  * Remove Share Context Menu\
+  https://www.elevenforum.com/t/add-or-remove-share-context-menu-in-windows-11.1690/
+
+  * Remove Troubleshoot Compatibility Context Menu\
+  https://www.tenforums.com/tutorials/91316-remove-troubleshoot-compatibility-context-menu-windows-10-a.html
+
+  * Remove "Add to Favorites" Context Menu\
+  https://www.elevenforum.com/t/add-or-remove-add-to-favorites-context-menu-in-windows-11.6795/
+
+  * Remove "Give access to" Context Menu\
+  https://www.elevenforum.com/t/add-or-remove-give-access-to-context-menu-in-windows-11.11209/
+
+* **Other**
+
+  * Disable Save Taskbar Thumbnail Previews to Cache\
+  https://www.tenforums.com/tutorials/126722-enable-disable-save-taskbar-thumbnail-previews-cache-windows.html
+
+  * Disable Combine Taskbar buttons and hide labels\
+  https://www.elevenforum.com/t/always-or-never-combine-taskbar-buttons-and-hide-labels-in-windows-11.15135/
+
 ## Overview
 
 Microsoft gives you the ability to add [Answer Files](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/update-windows-settings-and-scripts-create-your-own-answer-file-sxs?view=windows-11) (or Unattend files) to Windows Installation Media, which can be used to modify Windows Settings and Packages in the Windows Image (ISO) during the Windows Setup process.
