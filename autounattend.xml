@@ -1,0 +1,2840 @@
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+  <!--Standard x64 Unattended Windows Installation File to Automatically Debloat Windows 10 & 11 During Installation-->
+  <!--Compiled by Memory's Tech Tips https://www.youtube.com/@memstechtips | https://memstechtips.blogspot.com/ -->
+  <!--Credit to Schneegans.de as the Base File was Generated with https://schneegans.de/windows/unattend-generator/ -->
+  <!--Credit to Chris Titus Tech as this file contains Tweaks from The Windows Utility https://github.com/ChrisTitusTech/winutil | https://christitus.com/windows-tool/ | https://www.youtube.com/@ChrisTitusTech/ -->
+  <settings pass="offlineServicing"></settings>
+  <settings pass="windowsPE">
+    <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+			<SetupUILanguage>
+				<UILanguage>en-US</UILanguage>
+			</SetupUILanguage>
+			<InputLocale>0409:00000409;0809:00000408</InputLocale>
+			<SystemLocale>en-US</SystemLocale>
+			<UILanguage>en-US</UILanguage>
+			<UserLocale>en-US</UserLocale>
+		</component>
+    <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <UserData>
+        <ProductKey>
+          <Key>VK7JG-NPHTM-C97JM-9MPGT-3V66T</Key>
+          <!-- <WillShowUI>Always</WillShowUI> -->
+        </ProductKey>
+        <AcceptEula>true</AcceptEula>
+      </UserData>
+      <RunSynchronous>
+        <!--Bypass Windows 11 System Requirements-->
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassTPMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassSecureBootCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassStorageCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>4</Order>
+          <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassCPUCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>5</Order>
+          <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassRAMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>6</Order>
+          <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassDiskCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>7</Order>
+          <Description>Prevents auto detection of Windows Edition and forces Windows Setup to show all available Editions of Windows during setup.</Description>
+          <Path>cmd /c echo [Channel]>%SYSTEMDRIVE%\sources\ei.cfg &amp;&amp; echo Retail>>%SYSTEMDRIVE%\sources\ei.cfg &amp;&amp; echo [VL]>>%SYSTEMDRIVE%\sources\ei.cfg &amp;&amp; echo 0>>%SYSTEMDRIVE%\sources\ei.cfg</Path>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+  </settings>
+  <settings pass="generalize"></settings>
+  <settings pass="specialize">
+    <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <RunSynchronous>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Description>Extracts and Executes Scripts in this XML File</Description>
+          <Path>powershell.exe -NoProfile -WindowStyle Hidden -Command "$xml = [xml]::new(); $xml.Load('C:\Windows\Panther\unattend.xml'); $sb = [scriptblock]::Create( $xml.unattend.Extensions.ExtractScript ); Invoke-Command -ScriptBlock $sb -ArgumentList $xml;"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <Description>Executes the remove-packages Powershell Script</Description>
+          <Path>powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\remove-packages.ps1' -Raw | Invoke-Expression;"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <Description>Run Chris Titus WinUtil Tweaks</Description>
+          <Path>powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\wintweaks.ps1' -Raw | Invoke-Expression;"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>4</Order>
+          <Description>Executes the HKLM Registry Entries Script</Description>
+          <Path>cmd.exe /c "C:\Windows\Setup\Scripts\localmachine.cmd &gt;&gt;"C:\Windows\Setup\Scripts\localmachine.log" 2&gt;&amp;1"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>5</Order>
+          <Description>Adds Items to Right-Click Context Menu</Description>
+          <Path>cmd.exe /c "reg.exe import "C:\Windows\Setup\Scripts\contextmenu.reg" &gt;&gt;"C:\Windows\Setup\Scripts\contextmenu.log" 2&gt;&amp;1"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>6</Order>
+          <Description>Loads the Default User Registry Hive so Changes Can be Made to It</Description>
+          <Path>reg.exe load "HKU\DefaultUser" "C:\Users\Default\NTUSER.DAT"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>7</Order>
+          <Description>Registry Entry to Execute the HKCU Registry Entry Script the First Time a New User Logs In</Description>
+          <Path>C:\Windows\Setup\Scripts\currentuser.cmd</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>8</Order>
+          <Description>Registry Entry to Execute the HKCU Registry Entry Script the First Time a New User Logs In</Description>
+          <Path>reg.exe add "HKU\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Runonce" /v "pwshscript" /t REG_SZ /d "powershell.exe -WindowStyle Hidden -File C:\Windows\Setup\Scripts\powershell.ps1"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>9</Order>
+          <Description>Unloads the Default User Registry Hive</Description>
+          <Path>reg.exe unload "HKU\DefaultUser"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>10</Order>
+          <Description>Executes the securedelete Powershell Script</Description>
+          <Path>powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\securedelete.ps1' -Raw | Invoke-Expression;"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>11</Order>
+          <Description>Executes the notepad++ Powershell Script</Description>
+          <Path>powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\notepad++.ps1' -Raw | Invoke-Expression;"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>12</Order>
+          <Description>Executes the fonts Powershell Script</Description>
+          <Path>powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\fonts.ps1' -Raw | Invoke-Expression;"</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>13</Order>
+          <Description>Edge</Description>
+          <Path>cmd.exe /c "C:\Windows\Setup\Scripts\edgeremoval.bat &gt;&gt;"C:\Windows\Setup\Scripts\edgeremoval.log" 2&gt;&amp;1"</Path>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+  </settings>
+  <settings pass="auditSystem"></settings>
+  <settings pass="auditUser"></settings>
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+			<InputLocale>0409:00000409;0809:00000408</InputLocale>
+			<SystemLocale>en-US</SystemLocale>
+			<UILanguage>en-US</UILanguage>
+			<UserLocale>en-US</UserLocale>
+		</component>
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <UserAccounts>
+				<LocalAccounts>
+					<LocalAccount wcm:action="add">
+						<Name>Admin</Name>
+						<Group>Administrators</Group>
+						<Password>
+							<Value></Value>
+							<PlainText>true</PlainText>
+						</Password>
+					</LocalAccount>
+				</LocalAccounts>
+			</UserAccounts>
+			<AutoLogon>
+				<Username>Admin</Username>
+				<Enabled>true</Enabled>
+				<LogonCount>1</LogonCount>
+				<Password>
+					<Value></Value>
+					<PlainText>true</PlainText>
+				</Password>
+			</AutoLogon>
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
+        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+        <NetworkLocation>Work</NetworkLocation>
+        <ProtectYourPC>3</ProtectYourPC>
+      </OOBE>
+    </component>
+  </settings>
+  <Extensions>
+    <ExtractScript>
+param(
+    [xml] $Document
+);
+
+$scriptsDir = 'C:\Windows\Setup\Scripts\';
+foreach( $file in $Document.unattend.Extensions.File ) {
+    $path = [System.Environment]::ExpandEnvironmentVariables(
+        $file.GetAttribute( 'path' )
+    );
+    if( $path.StartsWith( $scriptsDir ) ) {
+        mkdir -Path $scriptsDir -ErrorAction 'SilentlyContinue';
+    }
+    $encoding = switch( [System.IO.Path]::GetExtension( $path ) ) {
+        { $_ -in '.ps1', '.xml' } { [System.Text.Encoding]::UTF8; }
+        { $_ -in '.reg', '.vbs', '.js' } { [System.Text.UnicodeEncoding]::new( $false, $true ); }
+        default { [System.Text.Encoding]::Default; }
+    };
+    [System.IO.File]::WriteAllBytes( $path, ( $encoding.GetPreamble() + $encoding.GetBytes( $file.InnerText.Trim() ) ) );
+}
+		</ExtractScript>
+    <!--Removes Preinstalled Bloatware Apps-->
+    <File path="C:\Windows\Setup\Scripts\remove-packages.ps1">
+      <![CDATA[
+  Get-AppxProvisionedPackage -Online |
+  Where-Object -Property 'DisplayName' -In -Value @(
+  'Microsoft.Microsoft3DViewer';
+  'Microsoft.BingSearch';
+  #'Microsoft.WindowsCalculator';
+  'Microsoft.WindowsCamera';
+  'Clipchamp.Clipchamp';
+  'Microsoft.WindowsAlarms';
+  'Microsoft.549981C3F5F10';
+  'Microsoft.Windows.DevHome';
+  'MicrosoftCorporationII.MicrosoftFamily';
+  'Microsoft.WindowsFeedbackHub';
+  'Microsoft.GetHelp';
+  'microsoft.windowscommunicationsapps';
+  'Microsoft.WindowsMaps';
+  'Microsoft.ZuneVideo';
+  'Microsoft.BingNews';
+  'Microsoft.WindowsNotepad';
+  'Microsoft.MicrosoftOfficeHub';
+  'Microsoft.Office.OneNote';
+  'Microsoft.OutlookForWindows';
+  #'Microsoft.Paint';
+  #'Microsoft.MSPaint';
+  'Microsoft.People';
+  'Microsoft.Windows.Photos';
+  'Microsoft.PowerAutomateDesktop';
+  'MicrosoftCorporationII.QuickAssist';
+  'Microsoft.SkypeApp';
+  'Microsoft.ScreenSketch';
+  'Microsoft.MicrosoftSolitaireCollection';
+  'Microsoft.MicrosoftStickyNotes';
+  'MSTeams';
+  'Microsoft.Getstarted';
+  'Microsoft.Todos';
+  'Microsoft.WindowsSoundRecorder';
+  'Microsoft.BingWeather';
+  'Microsoft.ZuneMusic';
+  #'Microsoft.WindowsTerminal';
+  'Microsoft.Xbox.TCUI';
+  'Microsoft.XboxApp';
+  'Microsoft.XboxGameOverlay';
+  'Microsoft.XboxGamingOverlay';
+  'Microsoft.XboxIdentityProvider';
+  'Microsoft.XboxSpeechToTextOverlay';
+  'Microsoft.GamingApp';
+  'Microsoft.YourPhone';
+  'Microsoft.MicrosoftEdge';
+  'Microsoft.MicrosoftEdge.Stable';
+  'Microsoft.MicrosoftEdge_8wekyb3d8bbwe';
+  'Microsoft.MicrosoftEdgeDevToolsClient_8wekyb3d8bbwe';
+  'Microsoft.MicrosoftEdgeDevToolsClient_1000.19041.1023.0_neutral_neutral_8wekyb3d8bbwe';
+  'Microsoft.MicrosoftEdge_44.19041.1266.0_neutral__8wekyb3d8bbwe';
+  'Microsoft.OneDrive';
+  'Microsoft.MicrosoftEdgeDevToolsClient';
+  'Microsoft.549981C3F5F10';
+  'Microsoft.MixedReality.Portal';
+  'Microsoft.Windows.Ai.Copilot.Provider';
+  'Microsoft.WindowsMeetNow';
+  #'Microsoft.WindowsStore';
+) | Remove-AppxProvisionedPackage -AllUsers -Online
+
+Get-WindowsCapability -Online |
+Where-Object -FilterScript {
+  ($_.Name -split '~')[0] -in @(
+    'Browser.InternetExplorer';
+    'MathRecognizer';
+    'Microsoft.Windows.Notepad';
+    'OpenSSH.Client';
+    #'Microsoft.Windows.MSPaint';
+    #'Microsoft.Windows.PowerShell.ISE';
+    'App.Support.QuickAssist';
+    'App.StepsRecorder';
+    'Media.WindowsMediaPlayer';
+    'Microsoft.Windows.WordPad';
+  );
+} | Remove-WindowsCapability -Online
+
+Get-WindowsOptionalFeature -Online |
+Where-Object -Property 'FeatureName' -In -Value @(
+  'Microsoft-SnippingTool';
+) | Disable-WindowsOptionalFeature -Online -Remove -NoRestart]]>
+    </File>
+    <!--Powershell Script to Run Various Tweaks, Most of These are from the Chris Titus Tech Windows Utility (Credit:https://christitus.com/windows-tool/)-->
+    <File path="C:\Windows\Setup\Scripts\wintweaks.ps1">
+      <![CDATA[
+  # Start Transcript to capture script output
+  $logFile = "C:\Windows\Setup\Scripts\wintweaks.log"
+  Start-Transcript -Path $logFile
+
+  # Create WinUtil shortcut on the desktop (sourced from CTT MicroWin)
+  $desktopPath = "C:\Users\Default\Desktop"
+  # Specify the target PowerShell command
+  $command = "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command 'irm https://christitus.com/win | iex'"
+  # Specify the path for the shortcut
+  $shortcutPath = Join-Path $desktopPath 'LAUNCH-CTT-WINUTIL.lnk'
+  # Create a shell object
+  $shell = New-Object -ComObject WScript.Shell
+
+  # Create a shortcut object
+  $shortcut = $shell.CreateShortcut($shortcutPath)
+
+  # Set properties of the shortcut
+  $shortcut.TargetPath = "powershell.exe"
+  $shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -Command `"$command`""
+  # Save the shortcut
+  $shortcut.Save()
+
+  # Create MAS shortcut on the desktop
+  # Specify the target PowerShell command
+  $command2 = "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command 'irm https://get.activated.win | iex'"
+  # Specify the path for the shortcut
+  $shortcutPath2 = Join-Path $desktopPath 'Microsoft Activation Script.lnk'
+  # Create a shell object
+  $shell2 = New-Object -ComObject WScript.Shell
+
+  # Create a shortcut object
+  $shortcut2 = $shell2.CreateShortcut($shortcutPath2)
+
+  # Set properties of the shortcut
+  $shortcut2.TargetPath = "powershell.exe"
+  $shortcut2.Arguments = "-NoProfile -ExecutionPolicy Bypass -Command `"$command2`""
+  # Save the shortcut
+  $shortcut2.Save()
+
+  # Make the shortcut have 'Run as administrator' property on
+  $bytes = [System.IO.File]::ReadAllBytes($shortcutPath)
+  # Set byte value at position 0x15 in hex, or 21 in decimal, from the value 0x00 to 0x20 in hex
+  $bytes[0x15] = $bytes[0x15] -bor 0x20
+  [System.IO.File]::WriteAllBytes($shortcutPath, $bytes)
+
+
+  # Enables .NET Framework 3.5
+  DISM /Online /Enable-Feature /FeatureName:NetFx3 /All /Source:X:\sources\sxs /LimitAccess
+
+  # Configure Maximum Password Age in Windows
+  net.exe accounts /maxpwage:UNLIMITED
+
+  # Allow Execution of PowerShell Script Files
+  Set-ExecutionPolicy -Scope 'LocalMachine' -ExecutionPolicy 'RemoteSigned' -Force
+
+  # Groups or splits svchost.exe processes based on the amount of physical memory in the system to optimize performance
+  $ram = (Get-CimInstance -ClassName Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum / 1kb
+  Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Type DWord -Value $ram -Force
+
+  $autoLoggerDir = "$env:PROGRAMDATA\Microsoft\Diagnosis\ETLLogs\AutoLogger"
+  If (Test-Path "$autoLoggerDir\AutoLogger-Diagtrack-Listener.etl") {
+      Remove-Item "$autoLoggerDir\AutoLogger-Diagtrack-Listener.etl"
+  }
+  $icaclsCommand = "icacls `"$autoLoggerDir`" /deny SYSTEM:`"(OI)(CI)F`""
+  Invoke-Expression $icaclsCommand | Out-Null
+
+  # Disable Defender Auto Sample Submission
+  Set-MpPreference -SubmitSamplesConsent 2 -ErrorAction Continue | Out-Null
+
+  # Removes Microsoft Edge
+  foreach ($line in $lines) {
+      if ($line -like '*Architecture : *') {
+          $architecture = $line -replace 'Architecture : ',''
+          # If the architecture is x64, replace it with amd64
+          if ($architecture -eq 'x64') {
+              $architecture = 'amd64'
+          }
+          Write-Host "Architecture: $architecture"
+          break
+      }
+  }
+
+  if (-not $architecture) {
+      Write-Host "Architecture information not found."
+  }
+  Remove-Item -Path "C:\Program Files (x86)\Microsoft\Edge" -Recurse -Force -ErrorAction Continue
+  Remove-Item -Path "C:\Program Files (x86)\Microsoft\EdgeWebView" -Recurse -Force -ErrorAction Continue
+  Remove-Item -Path "C:\Program Files (x86)\Microsoft\EdgeUpdate" -Recurse -Force -ErrorAction Continue
+  Remove-Item -Path "C:\Program Files (x86)\Microsoft\EdgeCore" -Recurse -Force -ErrorAction Continue
+  Remove-Item -Path "C:\Users\Public\Desktop\Microsoft Edge.lnk" -Recurse -Force -ErrorAction Continue
+  Remove-Item -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Microsoft Edge.lnk" -Recurse -Force -ErrorAction Continue
+  Remove-Item -Path "C:\Windows\SystemApps\Microsoft.MicrosoftEdge_8wekyb3d8bbwe" -Recurse -Force -ErrorAction Continue
+  Remove-Item -Path "C:\Windows\SystemApps\Microsoft.MicrosoftEdgeDevToolsClient_8wekyb3d8bbwe" -Recurse -Force -ErrorAction Continue
+  if ($architecture -eq 'amd64') {
+      $folderPath = Get-ChildItem -Path "C:\Windows\WinSxS" -Filter "amd64_microsoft-edge-webview_31bf3856ad364e35*" -Directory | Select-Object -ExpandProperty FullName
+
+      if ($folderPath) {
+          & 'takeown' '/f' $folderPath '/r'
+          & icacls $folderPath  "/grant" "$($adminGroup.Value):(F)" '/T' '/C'
+          Remove-Item -Path $folderPath -Recurse -Force
+      } else {
+          Write-Host "Folder not found."
+      }
+  } elseif ($architecture -eq 'arm64') {
+      $folderPath = Get-ChildItem -Path "C:\Windows\WinSxS" -Filter "arm64_microsoft-edge-webview_31bf3856ad364e35*" -Directory | Select-Object -ExpandProperty FullName
+
+      if ($folderPath) {
+          & 'takeown' '/f' $folderPath '/r'
+          & icacls $folderPath  "/grant" "$($adminGroup.Value):(F)" '/T' '/C'
+          Remove-Item -Path $folderPath -Recurse -Force
+      } else {
+          Write-Host "Folder not found."
+      }
+  } else {
+      Write-Host "Unknown architecture: $architecture"
+  }
+  & 'takeown' '/f' "C:\Windows\System32\Microsoft-Edge-Webview" '/r'
+  & 'icacls' "C:\Windows\System32\Microsoft-Edge-Webview" '/grant' "$($adminGroup.Value):(F)" '/T' '/C'
+  Remove-Item -Path "C:\Windows\System32\Microsoft-Edge-Webview" -Recurse -Force
+
+  # Removes OneDrive
+  Remove-Item "C:\Users\Default\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\OneDrive.lnk" -ErrorAction Continue
+  Remove-Item "C:\Users\Default\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\OneDrive.exe" -ErrorAction Continue
+  Remove-Item "C:\Windows\System32\OneDriveSetup.exe" -ErrorAction Continue
+  Remove-Item "C:\Windows\SysWOW64\OneDriveSetup.exe" -ErrorAction Continue
+
+  # Removes Microsoft Teams
+  $TeamsPath = [System.IO.Path]::Combine($env:LOCALAPPDATA, 'Microsoft', 'Teams')
+  $TeamsUpdateExePath = [System.IO.Path]::Combine($TeamsPath, 'Update.exe')
+
+  Stop-Process -Name "*teams*" -Force -ErrorAction Continue
+
+  if ([System.IO.File]::Exists($TeamsUpdateExePath)) {
+      # Uninstall app
+      $proc = Start-Process $TeamsUpdateExePath "-uninstall -s" -PassThru
+      $proc.WaitForExit()
+  }
+
+  Get-AppxPackage "*Teams*" | Remove-AppxPackage -ErrorAction Continue
+  Get-AppxPackage "*Teams*" -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction Continue
+
+  if ([System.IO.Directory]::Exists($TeamsPath)) {
+      Remove-Item $TeamsPath -Force -Recurse -ErrorAction Continue
+  }
+
+  # Uninstall from Uninstall registry key UninstallString
+  $us = (Get-ChildItem -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall, HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall | Get-ItemProperty | Where-Object { $_.DisplayName -like '*Teams*'}).UninstallString
+  if ($us.Length -gt 0) {
+      $us = ($us.Replace('/I', '/uninstall ') + ' /quiet').Replace('  ', ' ')
+      $FilePath = ($us.Substring(0, $us.IndexOf('.exe') + 4).Trim())
+      $ProcessArgs = ($us.Substring($us.IndexOf('.exe') + 5).Trim().replace('  ', ' '))
+      $proc = Start-Process -FilePath $FilePath -Args $ProcessArgs -PassThru
+      $proc.WaitForExit()
+  }
+
+  # Disables Teredo
+  $registryKeysTeredo = @(
+      @{Path = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters"; Name = "DisabledComponents"; Type = "DWord"; Value = 1}
+  )
+  foreach ($key in $registryKeysTeredo) {
+      New-ItemProperty -Path $key.Path -Name $key.Name -PropertyType $key.Type -Value $key.Value -Force
+  }
+  netsh interface teredo set state disabled
+
+  # Disables Telemetry
+  # Disable Scheduled Tasks
+  $scheduledTasks = @(
+      "Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser",
+      "Microsoft\Windows\Application Experience\ProgramDataUpdater",
+      "Microsoft\Windows\Autochk\Proxy",
+      "Microsoft\Windows\Customer Experience Improvement Program\Consolidator",
+      "Microsoft\Windows\Customer Experience Improvement Program\UsbCeip",
+      "Microsoft\Windows\DiskDiagnostic\Microsoft-Windows-DiskDiagnosticDataCollector",
+      "Microsoft\Windows\Feedback\Siuf\DmClient",
+      "Microsoft\Windows\Feedback\Siuf\DmClientOnScenarioDownload",
+      "Microsoft\Windows\Windows Error Reporting\QueueReporting",
+      "Microsoft\Windows\Application Experience\MareBackup",
+      "Microsoft\Windows\Application Experience\StartupAppTask",
+      "Microsoft\Windows\Application Experience\PcaPatchDbTask",
+      "Microsoft\Windows\Maps\MapsUpdateTask"
+  )
+  foreach ($task in $scheduledTasks) {
+      schtasks /Change /TN $task /Disable
+  }
+
+  # Enable the Ultimate Performance power plan
+  powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61
+
+  # Set the Ultimate Performance power plan as active
+  powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61
+
+  # Set Services to Manual
+  Write-Output 'Set Services to Manual: Turns a bunch of system services to manual that do not need to be running all the time.'
+  Set-Service -Name 'AJRouter' -StartupType Disabled -ErrorAction Continue
+  Set-Service -Name 'ALG' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'AppIDSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'AppMgmt' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'AppReadiness' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'AppVClient' -StartupType Disabled -ErrorAction Continue
+  Set-Service -Name 'AppXSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'Appinfo' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'AssignedAccessManagerSvc' -StartupType Disabled -ErrorAction Continue
+  Set-Service -Name 'AudioEndpointBuilder' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'AudioSrv' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'Audiosrv' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'AxInstSV' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'BDESVC' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'BFE' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'BITS' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'BTAGService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'BcastDVRUserService_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'BrokerInfrastructure' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'Browser' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'BthAvctpSvc' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'BthHFSrv' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'CDPSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'CDPUserSvc_*' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'COMSysApp' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'CaptureService_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'CertPropSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'ClipSVC' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'ConsentUxUserSvc_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'CoreMessagingRegistrar' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'CredentialEnrollmentManagerUserSvc_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'CryptSvc' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'CscService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'DPS' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'DcomLaunch' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'DcpSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'DevQueryBroker' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'DeviceAssociationBrokerSvc_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'DeviceAssociationService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'DeviceInstall' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'DevicePickerUserSvc_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'DevicesFlowUserSvc_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'Dhcp' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'DiagTrack' -StartupType Disabled -ErrorAction Continue
+  Set-Service -Name 'DialogBlockingService' -StartupType Disabled -ErrorAction Continue
+  Set-Service -Name 'DispBrokerDesktopSvc' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'DisplayEnhancementService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'DmEnrollmentSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'Dnscache' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'DoSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'DsSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'DsmSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'DusmSvc' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'EFS' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'EapHost' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'EntAppSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'EventLog' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'EventSystem' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'FDResPub' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'Fax' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'FontCache' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'FrameServer' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'FrameServerMonitor' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'GraphicsPerfSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'HomeGroupListener' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'HomeGroupProvider' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'HvHost' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'IEEtwCollectorService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'IKEEXT' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'InstallService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'InventorySvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'IpxlatCfgSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'KeyIso' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'KtmRm' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'LSM' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'LanmanServer' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'LanmanWorkstation' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'LicenseManager' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'LxpSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'MSDTC' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'MSiSCSI' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'MapsBroker' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'McpManagementService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'MessagingService_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'MicrosoftEdgeElevationService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'MixedRealityOpenXRSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'MpsSvc' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'MsKeyboardFilter' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'NPSMSvc_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'NaturalAuthentication' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'NcaSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'NcbService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'NcdAutoSetup' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'NetSetupSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'NetTcpPortSharing' -StartupType Disabled -ErrorAction Continue
+  Set-Service -Name 'Netlogon' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'Netman' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'NgcCtnrSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'NgcSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'NlaSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'OneSyncSvc_*' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'P9RdrService_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'PNRPAutoReg' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'PNRPsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'PcaSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'PeerDistSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'PenService_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'PerfHost' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'PhoneSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'PimIndexMaintenanceSvc_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'PlugPlay' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'PolicyAgent' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'Power' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'PrintNotify' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'PrintWorkflowUserSvc_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'ProfSvc' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'PushToInstall' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'QWAVE' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'RasAuto' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'RasMan' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'RemoteAccess' -StartupType Disabled -ErrorAction Continue
+  Set-Service -Name 'RemoteRegistry' -StartupType Disabled -ErrorAction Continue
+  Set-Service -Name 'RetailDemo' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'RmSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'RpcEptMapper' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'RpcLocator' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'RpcSs' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'SCPolicySvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SCardSvr' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SDRSVC' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SEMgrSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SENS' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'SNMPTRAP' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SNMPTrap' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SSDPSRV' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SamSs' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'ScDeviceEnum' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'Schedule' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'SecurityHealthService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'Sense' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SensorDataService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SensorService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SensrSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SessionEnv' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SgrmBroker' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'SharedAccess' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SharedRealitySvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'ShellHWDetection' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'SmsRouter' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'Spooler' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'SstpSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'StateRepository' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'StiSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'StorSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'SysMain' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'SystemEventsBroker' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'TabletInputService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'TapiSrv' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'TermService' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'TextInputManagementService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'Themes' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'TieringEngineService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'TimeBroker' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'TimeBrokerSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'TokenBroker' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'TrkWks' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'TroubleshootingSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'TrustedInstaller' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'UI0Detect' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'UdkUserSvc_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'UevAgentService' -StartupType Disabled -ErrorAction Continue
+  Set-Service -Name 'UmRdpService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'UnistoreSvc_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'UserDataSvc_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'UserManager' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'UsoSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'VGAuthService' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'VMTools' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'VSS' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'VacSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'VaultSvc' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'W32Time' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WEPHOSTSVC' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WFDSConMgrSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WMPNetworkSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WManSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WPDBusEnum' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WSService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WSearch' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WaaSMedicSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WalletService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WarpJITSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WbioSrvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'Wcmsvc' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'WcsPlugInService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WdNisSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WdiServiceHost' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WdiSystemHost' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WebClient' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'Wecsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WerSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WiaRpc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WinDefend' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'WinHttpAutoProxySvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WinRM' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'Winmgmt' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'WlanSvc' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'WpcMonSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WpnService' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'WpnUserService_*' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'WwanSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'XblAuthManager' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'XblGameSave' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'XboxGipSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'XboxNetApiSvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'autotimesvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'bthserv' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'camsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'cbdhsvc_*' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'cloudidsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'dcsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'defragsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'diagnosticshub.standardcollector.service' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'diagsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'dmwappushservice' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'dot3svc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'edgeupdate' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'edgeupdatem' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'embeddedmode' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'fdPHost' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'fhsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'gpsvc' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'hidserv' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'icssvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'iphlpsvc' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'lfsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'lltdsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'lmhosts' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'mpssvc' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'msiserver' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'netprofm' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'nsi' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'p2pimsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'p2psvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'perceptionsimulation' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'pla' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'seclogon' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'shpamsvc' -StartupType Disabled -ErrorAction Continue
+  Set-Service -Name 'smphost' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'spectrum' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'sppsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'ssh-agent' -StartupType Disabled -ErrorAction Continue
+  Set-Service -Name 'svsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'swprv' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'tiledatamodelsvc' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'tzautoupdate' -StartupType Disabled -ErrorAction Continue
+  Set-Service -Name 'uhssvc' -StartupType Disabled -ErrorAction Continue
+  Set-Service -Name 'upnphost' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'vds' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'vm3dservice' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'vmicguestinterface' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'vmicheartbeat' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'vmickvpexchange' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'vmicrdv' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'vmicshutdown' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'vmictimesync' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'vmicvmsession' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'vmicvss' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'vmvss' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'wbengine' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'wcncsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'webthreatdefsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'webthreatdefusersvc_*' -StartupType Automatic -ErrorAction Continue
+  Set-Service -Name 'wercplsupport' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'wisvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'wlidsvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'wlpasvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'wmiApSrv' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'workfolderssvc' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'wuauserv' -StartupType Manual -ErrorAction Continue
+  Set-Service -Name 'wudfsvc' -StartupType Manual -ErrorAction Continue
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  # Clean empty tasks of TaskManager
+  # Define the registry path
+  $baseRegistryPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\Microsoft\Windows"
+
+  # Define the tasks to be removed
+  $tasksToRemove = @(
+      "Application Experience\Microsoft Compatibility Appraiser",
+      "Autochk\Proxy",
+      "CertificateServicesClient\KeyPreGenTask",
+      "Customer Experience Improvement Program\UsbCeip",
+      "Customer Experience Improvement Program\Consolidator",
+      "Windows Error Reporting\QueueReporting"
+  )
+
+  foreach ($task in $tasksToRemove) {
+      $registryPath = Join-Path -Path $baseRegistryPath -ChildPath $task
+      try {
+          if (Test-Path $registryPath) {
+              Remove-Item -Path $registryPath -Recurse -Force
+              Write-Output "Successfully removed registry key: $registryPath"
+          } else {
+              Write-Output "Registry key not found: $registryPath"
+          }
+      } catch {
+          Write-Error "Failed to remove registry key: $registryPath. Error: $_"
+      }
+  }
+
+  Stop-Transcript]]>
+    </File>
+    <!--Local Machine Registry Entries - This Sets Features for the Local Machine-->
+    <File path="C:\Windows\Setup\Scripts\localmachine.cmd">
+      <![CDATA[
+:: Bypasses Microsoft Account Creation
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" /v BypassNRO /t REG_DWORD /d 1 /f
+
+:: Disables User Account Control - Without this entry, the currentuser.cmd file won't automatically run as Admin and some of the commands will fail. If you use UAC, just enable it in Control Panel.
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v EnableLUA /t REG_DWORD /d 0 /f
+
+:: Disable Windows Spotlight and set the normal Windows Picture as the desktop background
+:: Disable Windows Spotlight on the lock screen
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v DisableWindowsSpotlightOnLockScreen /t REG_DWORD /d 1 /f
+:: Disable Windows Spotlight suggestions, tips, tricks, and more on the lock screen
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f
+:: Disable Windows Spotlight on Settings
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v DisableWindowsSpotlightActiveUser /t REG_DWORD /d 1 /f
+:: Set desktop background to a normal Windows picture
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v Wallpaper /t REG_SZ /d "C:\Windows\Web\Wallpaper\Windows\img19.jpg" /f
+:: Ensure the wallpaper style is set to fill (2 is for fill, 10 is for fit)
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v WallpaperStyle /t REG_SZ /d "2" /f
+
+:: Prevents Dev Home Installation
+reg.exe delete "HKLM\SOFTWARE\Microsoft\WindowsUpdate\Orchestrator\UScheduler_Oobe\DevHomeUpdate" /f
+
+:: Prevents New Outlook for Windows Installation
+reg.exe delete "HKLM\SOFTWARE\Microsoft\WindowsUpdate\Orchestrator\UScheduler_Oobe\OutlookUpdate" /f
+
+:: Prevents Chat Auto Installation and Removes Chat Icon
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Communications" /v ConfigureChatAutoInstall /t REG_DWORD /d 0 /f
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Chat" /v "ChatIcon" /t REG_DWORD /d 3 /f
+
+:: Start Menu Customization
+reg.exe add "HKLM\SOFTWARE\Microsoft\PolicyManager\current\device\Start" /v ConfigureStartPins /t REG_SZ /d "{ \"pinnedList\": [] }" /f
+reg.exe add "HKLM\SOFTWARE\Microsoft\PolicyManager\current\device\Start" /v ConfigureStartPins_ProviderSet /t REG_DWORD /d 1 /f
+reg.exe add "HKLM\SOFTWARE\Microsoft\PolicyManager\current\device\Start" /v ConfigureStartPins_WinningProvider /t REG_SZ /d B5292708-1619-419B-9923-E5D9F3925E71 /f
+reg.exe add "HKLM\SOFTWARE\Microsoft\PolicyManager\providers\B5292708-1619-419B-9923-E5D9F3925E71\default\Device\Start" /v ConfigureStartPins /t REG_SZ /d "{ \"pinnedList\": [] }" /f
+reg.exe add "HKLM\SOFTWARE\Microsoft\PolicyManager\providers\B5292708-1619-419B-9923-E5D9F3925E71\default\Device\Start" /v ConfigureStartPins_LastWrite /t REG_DWORD /d 1 /f
+
+:: Enable Long File Paths with Up to 32,767 Characters
+reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
+
+:: Disables News and Interests
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 0 /f
+
+:: Disables Windows Consumer Features Like App Promotions etc.
+reg.exe add "HKLM\Software\Policies\Microsoft\Windows\CloudContent" /v "DisableWindowsConsumerFeatures" /t REG_DWORD /d 0 /f
+
+:: Disables Bitlocker Auto Encryption on Windows 11 24H2 and Onwards
+reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\BitLocker" /v "PreventDeviceEncryption" /t REG_DWORD /d 1 /f
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\EnhancedStorageDevices" /v TCGSecurityActivationDisabled /t REG_DWORD /d 1 /f
+
+:: Sets Windows Update to Only Install Security Updates and Delay Other Updates for 2 Years
+:: reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v AUOptions /t REG_DWORD /d 3 /f
+:: reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DeferFeatureUpdates /t REG_DWORD /d 1 /f
+:: reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DeferFeatureUpdatesPeriodInDays /t REG_DWORD /d 365 /f
+:: reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DeferQualityUpdates /t REG_DWORD /d 1 /f
+:: reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DeferQualityUpdatesPeriodInDays /t REG_DWORD /d 365 /f
+
+:: Disables Cortana
+reg.exe add "HKLM\Software\Policies\Microsoft\Windows\Windows Search" /v AllowCortana /t REG_DWORD /d 0 /f
+
+:: Disables Activity History
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v EnableActivityFeed /t REG_DWORD /d 0 /f
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v PublishUserActivities /t REG_DWORD /d 0 /f
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v UploadUserActivities /t REG_DWORD /d 0 /f
+
+:: Disables Hibernation
+reg.exe add "HKLM\System\CurrentControlSet\Control\Session Manager\Power" /v HibernateEnabled /t REG_DWORD /d 0 /f
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FlyoutMenuSettings" /v ShowHibernateOption /t REG_DWORD /d 0 /f
+
+:: Disables Location Tracking
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location" /v Value /t REG_SZ /d Deny /f
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Sensor\Overrides\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}" /v SensorPermissionState /t REG_DWORD /d 0 /f
+reg.exe add "HKLM\SYSTEM\CurrentControlSet\Services\lfsvc\Service\Configuration" /v Status /t REG_DWORD /d 0 /f
+reg.exe add "HKLM\SYSTEM\Maps" /v AutoUpdateEnabled /t REG_DWORD /d 0 /f
+
+:: Disables Telemetry
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f
+
+:: Disables Windows Ink Workspace
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\WindowsInkWorkspace" /v AllowWindowsInkWorkspace /t REG_DWORD /d 0 /f
+
+:: Disables Feedback Notifications
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v DoNotShowFeedbackNotifications /t REG_DWORD /d 1 /f
+
+:: Disables the Advertising ID for All Users
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo" /v DisabledByGroupPolicy /t REG_DWORD /d 1 /f
+
+:: Disables Windows Error Reporting
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting" /v Disabled /t REG_DWORD /d 1 /f
+
+:: Disables Delivery Optimization
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config" /v DODownloadMode /t REG_DWORD /d 0 /f
+
+:: Disables Remote Assistance
+reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\Remote Assistance" /v fAllowToGetHelp /t REG_DWORD /d 0 /f
+
+:: Search Windows Update for Drivers First
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching" /v SearchOrderConfig /t REG_DWORD /d 1 /f
+
+:: Gives Multimedia Applications like Games and Video Editing a Higher Priority
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 4294967295 /f
+
+:: Controls whether the memory page file is cleared at shutdown. Value 0 means it will not be cleared, speeding up shutdown.
+reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v ClearPageFileAtShutdown /t REG_DWORD /d 0 /f
+
+:: Enables NDU (Network Diagnostic Usage) Service on Startup
+reg.exe add "HKLM\SYSTEM\ControlSet001\Services\Ndu" /v Start /t REG_DWORD /d 2 /f
+
+:: Increases IRP stack size to 30 for the LanmanServer service to Improve Network Performance and Stability
+reg.exe add "HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" /v IRPStackSize /t REG_DWORD /d 30 /f
+
+:: Hides the Meet Now Button on the Taskbar
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v HideSCAMeetNow /t REG_DWORD /d 1 /f
+
+:: Gives Graphics Cards a Higher Priority for Gaming
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f
+
+:: Gives the CPU a Higher Priority for Gaming
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v Priority /t REG_DWORD /d 6 /f
+
+:: Gives Games a higher priority in the system's scheduling
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" /v "Scheduling Category" /t REG_SZ /d "High" /f
+
+:: Fix Managed by your organization in Edge
+reg.exe delete "HKLM\SOFTWARE\Policies\Microsoft\Edge" /f
+
+:: Set Registry Keys to Disable Wifi-Sense
+reg.exe add "HKLM\Software\Microsoft\PolicyManager\default\WiFi\AllowWiFiHotSpotReporting" /v Value /t REG_DWORD /d 0 /f
+reg.exe add "HKLM\Software\Microsoft\PolicyManager\default\WiFi\AllowAutoConnectToWiFiSenseHotspots" /v Value /t REG_DWORD /d 0 /f
+
+:: Disables Storage Sense
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy" /v 01 /t REG_DWORD /d 0 /f
+
+:: Disable Xbox GameDVR
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f
+
+:: Disable Tablet Mode
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\ImmersiveShell" /v TabletMode /t REG_DWORD /d 0 /f
+
+:: Always go to desktop mode on sign-in
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\ImmersiveShell" /v SignInMode /t REG_DWORD /d 1 /f
+
+:: Disable "Use my sign-in info to automatically finish setting up my device after an update or restart"
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v DisableAutomaticRestartSignOn /t REG_DWORD /d 1 /f
+
+:: Disables OneDrive Automatic Backups of Important Folders (Documents, Pictures etc.)
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\OneDrive" /v KFMBlockOptIn /t REG_DWORD /d 1 /f
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\OneDrive" /v DisableFileSyncNGSC /t REG_DWORD /d 1 /f
+
+:: Disables the "Push To Install" feature in Windows
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\PushToInstall" /v "DisablePushToInstall" /t REG_DWORD /d 1 /f
+
+:: Disables Consumer Account State Content
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v "DisableConsumerAccountStateContent" /t REG_DWORD /d 1 /f
+
+:: Disables Cloud Optimized Content
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v "DisableCloudOptimizedContent" /t REG_DWORD /d 1 /f
+
+:: Deletes Microsoft Edge Registry Entries
+reg.exe delete "HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge" /f
+reg.exe delete "HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge Update" /f
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Appx\AppxAllUserStore\Applications\Microsoft.MicrosoftEdge.Stable_124.0.2478.105_neutral__8wekyb3d8bbwe" /f
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Appx\AppxAllUserStore\InboxApplications\Microsoft.MicrosoftEdge_44.19041.1266.0_neutral__8wekyb3d8bbwe" /f
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Appx\AppxAllUserStore\InboxApplications\Microsoft.MicrosoftEdgeDevToolsClient_10.0.19041.1023_neutral__8wekyb3d8bbwe" /f
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Appx\AppxAllUserStore\S-1-5-21-2466455740-832722602-188176761-1001\Microsoft.MicrosoftEdge.Stable_124.0.2478.105_neutral__8wekyb3d8bbwe" /f
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Appx\AppxAllUserStore\S-1-5-21-2466455740-832722602-188176761-1001\Microsoft.MicrosoftEdge_44.19041.1266.0_neutral__8wekyb3d8bbwe" /f
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Appx\AppxAllUserStore\S-1-5-21-2466455740-832722602-188176761-1001\Microsoft.MicrosoftEdgeDevToolsClient_10.0.19041.1023_neutral__8wekyb3d8bbwe" /f
+
+:: DELETES SCHEDULED TASKS REGISTRY KEYS
+:: Deleting Application Compatibility Appraiser
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{0600DD45-FAF2-4131-A006-0B17509B9F78}" /f
+:: Deleting Customer Experience Improvement Program
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{4738DE7A-BCC1-4E2D-B1B0-CADB044BFA81}" /f
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{6FAC31FA-4A85-4E64-BFD5-2154FF4594B3}" /f
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{FC931F16-B50A-472E-B061-B6F79A71EF59}" /f
+:: Deleting Program Data Updater
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{0671EB05-7D95-4153-A32B-1426B9FE61DB}" /f
+:: Deleting autochk proxy
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{87BF85F4-2CE1-4160-96EA-52F554AA28A2}" /f
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{8A9C643C-3D74-4099-B6BD-9C6D170898B1}" /f
+:: Deleting QueueReporting
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\{E3176A65-4E44-4ED3-AA73-3283660ACB9C}" /f
+
+:: Block Automatic Upgrade from Windows 10 22H2 to Windows 11 Although Manual Upgrade is Still Allowed - Credit CyberCPU Tech
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "TargetReleaseVersion" /t REG_DWORD /d 1 /f
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "TargetReleaseVersionInfo" /t REG_SZ /d "22H2" /f
+reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "ProductVersion" /t REG_SZ /d "Windows 10" /f
+
+:: ========================================================================================================
+
+:: Enable Desktop folder on ThisPC
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}" /v HideIfEnabled /f
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+
+:: Enable Documents folder on ThisPC
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{d3162b92-9365-467a-956b-92703aca08af}" /v HideIfEnabled /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{d3162b92-9365-467a-956b-92703aca08af}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+
+:: Enable Downloads folder on ThisPC
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{088e3905-0323-4b02-9826-5d99428e115f}" /v HideIfEnabled /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{088e3905-0323-4b02-9826-5d99428e115f}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+
+:: Enable Music folder on ThisPC
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{3dfdf296-dbec-4fb4-81d1-6a3438bcf4de}" /v HideIfEnabled /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{1CF1260C-4DD0-4ebb-811F-33C572699FDE}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{3dfdf296-dbec-4fb4-81d1-6a3438bcf4de}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+
+:: Enable Pictures folder on ThisPC
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{24ad3ad4-a569-4530-98e1-ab02f9417aa8}" /v HideIfEnabled /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{24ad3ad4-a569-4530-98e1-ab02f9417aa8}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+
+:: Enable Videos folder on ThisPC
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{f86fa3ab-70d2-4fc7-9c99-fcbf05467f3a}" /v HideIfEnabled /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\NameSpace\{f86fa3ab-70d2-4fc7-9c99-fcbf05467f3a}" /v HiddenByDefault /t REG_DWORD /d 0 /f
+
+:: Removes Gallery from explorer navigation pane
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{e88865ea-0e1c-4e20-9aa6-edcd0212c87c}" /ve /d "Gallery" /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{e88865ea-0e1c-4e20-9aa6-edcd0212c87c}" /v HiddenByDefault /t REG_DWORD /d 1 /f
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\NonEnum" /v {e88865ea-0e1c-4e20-9aa6-edcd0212c87c} /t REG_DWORD /d 1 /f
+
+:: Removes Home from explorer navigation pane
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}" /f
+reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace_36354489\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}" /f
+
+::Disable Show Files from Office.com in File Explorer
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer" /v DisableGraphRecentItems /t REG_DWORD /d 1 /f
+
+:: Disable Combine Taskbar buttons and hide labels
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoTaskGrouping /t REG_DWORD /d 1 /f]]>
+    </File>
+    <!--Adds Items to Right-Click Context Menu-->
+    <File path="C:\Windows\Setup\Scripts\contextmenu.reg">
+      <![CDATA[
+    Windows Registry Editor Version 5.00
+    ; Add "Change Owner" to the Right Click Context Menu
+    ; Created by: Shawn Brink
+    ; Created on: September 24, 2022
+    ; Tutorial: https://www.elevenforum.com/t/add-change-owner-to-context-menu-in-windows-11.9181/
+
+    ; For files
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner]
+    "MUIVerb"="Change Owner"
+    "Icon"="imageres.dll,-88"
+    "SubCommands"=""
+    "Position"="bottom"
+
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\01Owner]
+    @="See Current Owner"
+    "Icon"="imageres.dll,-1029"
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\01Owner\command]
+    @="powershell -NoExit Get-ACL '%1'| Format-List -Property Owner"
+
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\02Owner]
+    @="Take Ownership"
+    "HasLUAShield"=""
+    "NeverDefault"=""
+    "CommandFlags"=dword:00000020
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\02Owner\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c takeown /f \\\"%1\\\" && icacls \\\"%1\\\" /grant *S-1-3-4:F /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"= "powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c takeown /f \\\"%1\\\" && icacls \\\"%1\\\" /grant *S-1-3-4:F /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\Administrators]
+    @="Change Owner to Administrators"
+    "HasLUAShield"=""
+    "CommandFlags"=dword:00000020
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\Administrators\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Administrators\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Administrators\" /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\Everyone]
+    @="Change Owner to Everyone"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\Everyone\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Everyone\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Everyone\" /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\SYSTEM]
+    @="Change Owner to SYSTEM"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\SYSTEM\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"SYSTEM\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"SYSTEM\" /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\TrustedInstaller]
+    @="Change Owner to TrustedInstaller"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\*\shell\ChangeOwner\shell\TrustedInstaller\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"\"\"NT Service\\TrustedInstaller\"\"\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"\"\"NT Service\\TrustedInstaller\"\"\" /t /c /l & pause' -Verb runAs\""
+
+    ; For folders
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner]
+    "MUIVerb"="Change Owner"
+    "AppliesTo"="NOT (System.ItemPathDisplay:=\"C:\\Users\" OR System.ItemPathDisplay:=\"C:\\ProgramData\" OR System.ItemPathDisplay:=\"C:\\Windows\" OR System.ItemPathDisplay:=\"C:\\Windows\\System32\" OR System.ItemPathDisplay:=\"C:\\Program Files\" OR System.ItemPathDisplay:=\"C:\\Program Files (x86)\")"
+    "Icon"="imageres.dll,-88"
+    "NoWorkingDirectory"=""
+    "Position"="bottom"
+    "SubCommands"=""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\01Owner]
+    @="See Current Owner"
+    "Icon"="imageres.dll,-1029"
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\01Owner\command]
+    @="powershell -NoExit Get-ACL '%1'| Format-List -Property Owner"
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\02Owner]
+    @="Take Ownership"
+    "HasLUAShield"=""
+    "CommandFlags"=dword:00000020
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\02Owner\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c takeown /f \\\"%1\\\" /r /d y && icacls \\\"%1\\\" /grant *S-1-3-4:F /t /c /l /q & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c takeown /f \\\"%1\\\" /r /d y && icacls \\\"%1\\\" /grant *S-1-3-4:F /t /c /l /q & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\Administrators]
+    @="Change Owner to Administrators"
+    "HasLUAShield"=""
+    "CommandFlags"=dword:00000020
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\Administrators\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Administrators\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Administrators\" /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\Everyone]
+    @="Change Owner to Everyone"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\Everyone\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Everyone\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"Everyone\" /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\SYSTEM]
+    @="Change Owner to SYSTEM"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\SYSTEM\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"SYSTEM\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"SYSTEM\" /t /c /l & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\TrustedInstaller]
+    @="Change Owner to TrustedInstaller"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\Directory\shell\ChangeOwner\shell\TrustedInstaller\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"\"\"NT Service\\TrustedInstaller\"\"\" /t /c /l & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /setowner \"\"\"NT Service\\TrustedInstaller\"\"\" /t /c /l & pause' -Verb runAs\""
+
+    ; For drives
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner]
+    "MUIVerb"="Change Owner"
+    "AppliesTo"="NOT (System.ItemPathDisplay:=\"C:\\\")"
+    "Icon"="imageres.dll,-88"
+    "NoWorkingDirectory"=""
+    "Position"="bottom"
+    "SubCommands"=""
+
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\01Owner]
+    @="See Current Owner"
+    "Icon"="imageres.dll,-1029"
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\01Owner\command]
+    @="powershell -NoExit Get-ACL '%1'| Format-List -Property Owner"
+
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runas]
+    @="Take Ownership"
+    "HasLUAShield"=""
+    "CommandFlags"=dword:00000020
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runas\command]
+    @="cmd.exe /c takeown /f \"%1\\\" /r /d y && icacls \"%1\\\" /grant *S-1-3-4:F /t /c & pause"
+    "IsolatedCommand"="cmd.exe /c takeown /f \"%1\\\" /r /d y && icacls \"%1\\\" /grant *S-1-3-4:F /t /c & pause"
+
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasAdministrators]
+    @="Change Owner to Administrators"
+    "HasLUAShield"=""
+    "CommandFlags"=dword:00000020
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasAdministrators\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \"%1\\\" /setowner \"Administrators\" /c & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \"%1\\\" /setowner \"Administrators\" /c & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasEveryone]
+    @="Change Owner to Everyone"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasEveryone\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/k icacls \"%1\\\" /setowner \"Everyone\" /c & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/k icacls \"%1\\\" /setowner \"Everyone\" /c & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasSYSTEM]
+    @="Change Owner to SYSTEM"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasSYSTEM\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \"%1\\\" /setowner \"SYSTEM\" /c & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \"%1\\\" /setowner \"SYSTEM\" /c & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasTrustedInstaller]
+    @="Change Owner to TrustedInstaller"
+    "HasLUAShield"=""
+    [HKEY_CLASSES_ROOT\Drive\shell\ChangeOwner\shell\runasTrustedInstaller\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \"%1\\\" /setowner \"\"\"NT Service\\TrustedInstaller\"\"\" /c & pause' -Verb runAs\""
+    "IsolatedCommand"="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \"%1\\\" /setowner \"\"\"NT Service\\TrustedInstaller\"\"\" /c & pause' -Verb runAs\""
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Add "Reset Permissions" to context menu
+    ; Created by: Shawn Brink
+    ; Created on: January 1, 2024
+    ; Tutorial: https://www.elevenforum.com/t/add-reset-permissions-to-context-menu-in-windows-11.21237/
+
+    [HKEY_CLASSES_ROOT\*\shell\ResetPermissions]
+    "MUIVerb"="Reset Permissions"
+    "HasLUAShield"=""
+    "NoWorkingDirectory"=""
+    "Position"="bottom"
+    "Extended"=-
+
+    [HKEY_CLASSES_ROOT\*\shell\ResetPermissions\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /reset & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ResetPermissions]
+    "MUIVerb"="Reset Permissions"
+    "HasLUAShield"=""
+    "NoWorkingDirectory"=""
+    "Position"="bottom"
+    "Extended"=-
+    "SubCommands"=""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ResetPermissions\shell\001flyout]
+    "MUIVerb"="Reset permissions of this folder only"
+    "HasLUAShield"=""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ResetPermissions\shell\001flyout\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /reset & pause' -Verb runAs\""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ResetPermissions\shell\002flyout]
+    "MUIVerb"="Reset permissions of this folder, subfolders and files"
+    "HasLUAShield"=""
+
+    [HKEY_CLASSES_ROOT\Directory\shell\ResetPermissions\shell\002flyout\command]
+    @="powershell -windowstyle hidden -command \"Start-Process cmd -ArgumentList '/c icacls \\\"%1\\\" /reset /t /c /l & pause' -Verb runAs\""
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Add "Restart Explorer" to context menu
+    ; Created by: Shawn Brink
+    ; Created on: June 27, 2023
+    ; Updated on: October 30, 2023
+    ; Tutorial: https://www.elevenforum.com/t/add-restart-explorer-context-menu-in-windows-11.667/
+
+    [-HKEY_CLASSES_ROOT\DesktopBackground\Shell\Restart Explorer]
+
+    [HKEY_CLASSES_ROOT\DesktopBackground\Shell\Restart Explorer]
+    "icon"="explorer.exe"
+    "Position"="Middle"
+    "SubCommands"=""
+
+    [HKEY_CLASSES_ROOT\DesktopBackground\Shell\Restart Explorer\shell\01menu]
+    "MUIVerb"="Restart Explorer Now"
+
+    [HKEY_CLASSES_ROOT\DesktopBackground\Shell\Restart Explorer\shell\01menu\command]
+    @="cmd.exe /c taskkill /f /im explorer.exe  & start explorer.exe"
+
+    [HKEY_CLASSES_ROOT\DesktopBackground\Shell\Restart Explorer\shell\02menu]
+    "MUIVerb"="Restart Explorer with Pause"
+    "CommandFlags"=dword:00000020
+
+    [HKEY_CLASSES_ROOT\DesktopBackground\Shell\Restart Explorer\shell\02menu\command]
+    @="cmd.exe /c @echo off & echo. & echo Stopping explorer.exe process . . . & echo. & taskkill /f /im explorer.exe & echo. & echo. & echo Waiting to start explorer.exe process when you are ready . . . & pause && start explorer.exe && exit"
+
+    [-HKEY_CLASSES_ROOT\Directory\Background\Shell\Restart Explorer]
+
+    [HKEY_CLASSES_ROOT\Directory\Background\Shell\Restart Explorer]
+    "icon"="explorer.exe"
+    "SubCommands"=""
+    "Position"="Bottom"
+
+    [HKEY_CLASSES_ROOT\Directory\Background\Shell\Restart Explorer\shell\01menu]
+    "MUIVerb"="Restart Explorer Now"
+
+    [HKEY_CLASSES_ROOT\Directory\Background\Shell\Restart Explorer\shell\01menu\command]
+    @="cmd.exe /c taskkill /f /im explorer.exe  & start explorer.exe"
+
+    [HKEY_CLASSES_ROOT\Directory\Background\Shell\Restart Explorer\shell\02menu]
+    "MUIVerb"="Restart Explorer with Pause"
+    "CommandFlags"=dword:00000020
+
+    [HKEY_CLASSES_ROOT\Directory\Background\Shell\Restart Explorer\shell\02menu\command]
+    @="cmd.exe /c @echo off & echo. & echo Stopping explorer.exe process . . . & echo. & taskkill /f /im explorer.exe & echo. & echo. & echo Waiting to start explorer.exe process when you are ready . . . & pause && start explorer.exe && exit"
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Add "Explorer Panes" to context menu
+    ; Created by: Shawn Brink
+    ; Created on: January 27/29th 2017
+    ; Tutorial: https://www.tenforums.com/tutorials/76111-navigation-pane-add-context-menu-windows-10-a.html
+    ; Tutorial: https://www.tenforums.com/tutorials/75915-preview-pane-add-context-menu-windows-10-a.html
+    ; Tutorial: https://www.tenforums.com/tutorials/75922-details-pane-add-context-menu-windows-10-a.html
+    ; Edited by: Undisputed00x
+    ; Edited on: March 15th 2024
+
+    [-HKEY_CLASSES_ROOT\Directory\Background\shell\Explorer Panes]
+
+    [HKEY_CLASSES_ROOT\Directory\Background\shell\Explorer Panes]
+    "Icon"="shell32.dll,-16755"
+    "SubCommands"=""
+    "Position"="Bottom"
+
+    [HKEY_CLASSES_ROOT\Directory\Background\shell\Explorer Panes\shell\01menu]
+    "Icon"="shell32.dll,-16755"
+    "CanonicalName"="{41dd5f6f-9f9e-4066-8836-722fe4bb950e}"
+    "Description"="@shell32.dll,-31422"
+    "MUIVerb"="@shell32.dll,-31421"
+    "PaneID"="{cb316b22-25f7-42b8-8a09-540d23a43c2f}"
+    "PaneVisibleProperty"="PageSpaceControlSizer_Visible"
+
+    [HKEY_CLASSES_ROOT\Directory\Background\shell\Explorer Panes\shell\02menu]
+    "CanonicalName"="{831e1a71-5be9-4934-be77-04baedc9f21b}"
+    "Description"="@shell32.dll,-31424"
+    "Icon"="shell32.dll,-16757"
+    "MUIVerb"="@shell32.dll,-31423"
+    "PaneID"="{893c63d1-45c8-4d17-be19-223be71be365}"
+    "PaneVisibleProperty"="ReadingPaneSizer_Visible"
+    "PolicyID"="{33dcce8d-b6f8-4b7a-ac93-45e301f956aa}"
+
+    [HKEY_CLASSES_ROOT\Directory\Background\shell\Explorer Panes\shell\03menu]
+    "CanonicalName"="{1380d028-a77f-4c12-96c7-ea276333f982}"
+    "Description"="@shell32.dll,-31416"
+    "Icon"="shell32.dll,-16814"
+    "MUIVerb"="@shell32.dll,-31415"
+    "PaneID"="{43abf98b-89b8-472d-b9ce-e69b8229f019}"
+    "PaneVisibleProperty"="PreviewPaneSizer_Visible"
+    "PolicyID"="{17067f8d-981b-42c5-98f8-5bc016d4b073}"
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Customize this folder" from context menu and properties tabs
+    ; Created by: Shawn Brink
+    ; Created on: October 2, 2022
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-customize-this-folder-on-context-menu-and-properties-in-windows-11.9395/
+
+    [-HKEY_CLASSES_ROOT\Directory\shellex\PropertySheetHandlers\{ef43ecfe-2ab9-4632-bf21-58909dd177f0}]
+    [-HKEY_CLASSES_ROOT\Drive\shellex\PropertySheetHandlers\{ef43ecfe-2ab9-4632-bf21-58909dd177f0}]
+
+    ; To set and clear policies
+    [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+    "NoCustomizeThisFolder"=-
+    "NoCustomizeWebView"=-
+    "ClassicShell"=-
+
+    [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer]
+    "NoCustomizeThisFolder"=dword:00000001
+    "NoCustomizeWebView"=-
+    "ClassicShell"=-
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Include in library" from context menu
+    ; Created by: Shawn Brink
+    ; Created on: June 22, 2023
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-include-in-library-context-menu-in-windows-11.15843/
+
+    [-HKEY_CLASSES_ROOT\Folder\ShellEx\ContextMenuHandlers\Library Location]
+    [-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Folder\ShellEx\ContextMenuHandlers\Library Location]
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Pin to quick access" from context menu
+    ; Created by: Shawn Brink
+    ; Created on: November 15, 2021
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-pin-to-quick-access-context-menu-in-windows-11.2807/
+
+    [-HKEY_CLASSES_ROOT\AllFilesystemObjects\shell\pintohome]
+    [-HKEY_CLASSES_ROOT\Drive\shell\pintohome]
+    [-HKEY_CLASSES_ROOT\Folder\shell\pintohome]
+    [-HKEY_CLASSES_ROOT\Network\shell\pintohome]
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Previous version" from context menu and properties
+    ; Created by: Shawn Brink
+    ; Created on: October 2, 2022
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-previous-versions-from-context-menu-and-properties-in-windows-11.9391/
+
+    ; Remove from context menu
+    [-HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\ContextMenuHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+    [-HKEY_CLASSES_ROOT\CLSID\{450D8FBA-AD25-11D0-98A8-0800361B1103}\shellex\ContextMenuHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+    [-HKEY_CLASSES_ROOT\Directory\shellex\ContextMenuHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+    [-HKEY_CLASSES_ROOT\Drive\shellex\ContextMenuHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+
+    ; Remove from Properties page
+    [-HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\PropertySheetHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+    [-HKEY_CLASSES_ROOT\CLSID\{450D8FBA-AD25-11D0-98A8-0800361B1103}\shellex\PropertySheetHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+    [-HKEY_CLASSES_ROOT\Directory\shellex\PropertySheetHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+    [-HKEY_CLASSES_ROOT\Drive\shellex\PropertySheetHandlers\{596AB062-B4D2-4215-9F74-E9109B0A8153}]
+
+    ; To clear any policies
+    [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer]
+    "NoPreviousVersionsPage"=-
+    [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer]
+    "NoPreviousVersionsPage"=-
+    [HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\PreviousVersions]
+    "DisableLocalPage"=-
+    [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer]
+    "NoPreviousVersionsPage"=-
+    [HKEY_CURRENT_USER\Software\Policies\Microsoft\PreviousVersions]
+    "DisableLocalPage"=-
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Share" from context menu
+    ; Created by: Shawn Brink
+    ; Created on: October 6, 2021
+    ; Updated on: May 3, 2024
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-share-context-menu-in-windows-11.1690/
+
+    [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked]
+    "{e2bf9676-5f8f-435c-97eb-11607a5bedf7}"="Share"
+    [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked]
+    "{e2bf9676-5f8f-435c-97eb-11607a5bedf7}"="Share"
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Troubleshoot Compatibility" from context menu
+    ; Created by: Shawn Brink
+    ; Created on: August 14th 2017
+    ; Tutorial: https://www.tenforums.com/tutorials/91316-remove-troubleshoot-compatibility-context-menu-windows-10-a.html
+
+    [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked]
+    "{1d27f844-3a1f-4410-85ac-14651078412d}"=""
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Add to Favorites" from context menu
+    ; Created by: Shawn Brink
+    ; Created on: May 31, 2022
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-add-to-favorites-context-menu-in-windows-11.6795/
+
+    [-HKEY_CLASSES_ROOT\*\shell\pintohomefile]
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ; Removes "Give access to" from context menu
+    ; Created by: Shawn Brink
+    ; Created on: December 15, 2022
+    ; Tutorial: https://www.elevenforum.com/t/add-or-remove-give-access-to-context-menu-in-windows-11.11209/
+
+    [HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
+    "SharingWizardOn"=dword:00000000
+    [-HKEY_CLASSES_ROOT\*\shellex\ContextMenuHandlers\Sharing]
+    [-HKEY_CLASSES_ROOT\Directory\Background\shellex\ContextMenuHandlers\Sharing]
+    [-HKEY_CLASSES_ROOT\Directory\shellex\ContextMenuHandlers\Sharing]
+    [-HKEY_CLASSES_ROOT\Drive\shellex\ContextMenuHandlers\Sharing]
+    [-HKEY_CLASSES_ROOT\LibraryFolder\background\shellex\ContextMenuHandlers\Sharing]
+    [-HKEY_CLASSES_ROOT\UserLibraryFolder\shellex\ContextMenuHandlers\Sharing]
+
+    ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Windows Registry Editor Version 5.00
+
+    ; Created by: Shawn Brink
+    ; Created on: December 29th 2018
+    ; Updated on: August 30, 2021
+    ; Tutorial: https://www.tenforums.com/tutorials/124353-add-secure-delete-recycle-bin-context-menu-windows-10-a.html
+    ; Edited by: Undisputed00x
+    ; Edited on: July 22th 2024
+
+
+    [HKEY_CLASSES_ROOT\*\shell\Secure Delete]
+    @="Secure Delete"
+    "Position"="Bottom"
+    "NoWorkingDirectory"=""
+    "Icon"="imageres.dll,-5320"
+
+
+    [HKEY_CLASSES_ROOT\*\shell\Secure Delete\command]
+    ; @="powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "%SystemRoot%\SysWOW64\securedelete.ps1" "%1"
+    @=hex(2):70,00,6f,00,77,00,65,00,72,00,73,00,68,00,65,00,6c,00,6c,00,2e,00,\
+      65,00,78,00,65,00,20,00,2d,00,4e,00,6f,00,4c,00,6f,00,67,00,6f,00,20,00,\
+      2d,00,4e,00,6f,00,50,00,72,00,6f,00,66,00,69,00,6c,00,65,00,20,00,2d,00,\
+      57,00,69,00,6e,00,64,00,6f,00,77,00,53,00,74,00,79,00,6c,00,65,00,20,00,\
+      48,00,69,00,64,00,64,00,65,00,6e,00,20,00,2d,00,45,00,78,00,65,00,63,00,\
+      75,00,74,00,69,00,6f,00,6e,00,50,00,6f,00,6c,00,69,00,63,00,79,00,20,00,\
+      42,00,79,00,70,00,61,00,73,00,73,00,20,00,2d,00,46,00,69,00,6c,00,65,00,\
+      20,00,22,00,25,00,53,00,79,00,73,00,74,00,65,00,6d,00,52,00,6f,00,6f,00,\
+      74,00,25,00,5c,00,53,00,79,00,73,00,57,00,4f,00,57,00,36,00,34,00,5c,00,\
+      73,00,65,00,63,00,75,00,72,00,65,00,64,00,65,00,6c,00,65,00,74,00,65,00,\
+      2e,00,70,00,73,00,31,00,22,00,20,00,22,00,25,00,31,00,22,00,00,00
+
+
+
+    [HKEY_CLASSES_ROOT\Directory\shell\Secure Delete]
+    @="Secure delete"
+    "Position"="Bottom"
+    "AppliesTo"="NOT (System.ItemPathDisplay:=\"C:\\Users\" OR System.ItemPathDisplay:=\"C:\\ProgramData\" OR System.ItemPathDisplay:=\"C:\\Windows\" OR System.ItemPathDisplay:=\"C:\\Windows.old\" OR System.ItemPathDisplay:=\"C:\\Windows\\System32\" OR System.ItemPathDisplay:=\"C:\\Program Files\" OR System.ItemPathDisplay:=\"C:\\Program Files (x86)\")"
+    "NoWorkingDirectory"=""
+    "Icon"="imageres.dll,-5320"
+
+
+    [HKEY_CLASSES_ROOT\Directory\shell\Secure Delete\command]
+    ; @="powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "%SystemRoot%\SysWOW64\securedelete.ps1" "%1"
+    @=hex(2):70,00,6f,00,77,00,65,00,72,00,73,00,68,00,65,00,6c,00,6c,00,2e,00,\
+      65,00,78,00,65,00,20,00,2d,00,4e,00,6f,00,4c,00,6f,00,67,00,6f,00,20,00,\
+      2d,00,4e,00,6f,00,50,00,72,00,6f,00,66,00,69,00,6c,00,65,00,20,00,2d,00,\
+      57,00,69,00,6e,00,64,00,6f,00,77,00,53,00,74,00,79,00,6c,00,65,00,20,00,\
+      48,00,69,00,64,00,64,00,65,00,6e,00,20,00,2d,00,45,00,78,00,65,00,63,00,\
+      75,00,74,00,69,00,6f,00,6e,00,50,00,6f,00,6c,00,69,00,63,00,79,00,20,00,\
+      42,00,79,00,70,00,61,00,73,00,73,00,20,00,2d,00,46,00,69,00,6c,00,65,00,\
+      20,00,22,00,25,00,53,00,79,00,73,00,74,00,65,00,6d,00,52,00,6f,00,6f,00,\
+      74,00,25,00,5c,00,53,00,79,00,73,00,57,00,4f,00,57,00,36,00,34,00,5c,00,\
+      73,00,65,00,63,00,75,00,72,00,65,00,64,00,65,00,6c,00,65,00,74,00,65,00,\
+      2e,00,70,00,73,00,31,00,22,00,20,00,22,00,25,00,31,00,22,00,00,00
+
+
+
+    ; Recycle Bin background entry
+    [HKEY_CLASSES_ROOT\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}\shell\Secure Delete]
+    @="Secure Delete"
+    "NoWorkingDirectory"=""
+    "Position"="top"
+    "Icon"="imageres.dll,-5320"
+
+
+    [HKEY_CLASSES_ROOT\CLSID\{645FF040-5081-101B-9F08-00AA002F954E}\shell\Secure Delete\command]
+    ; @="powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "%SystemRoot%\SysWOW64\securedelete.ps1"
+    @=hex(2):70,00,6f,00,77,00,65,00,72,00,73,00,68,00,65,00,6c,00,6c,00,2e,00,\
+      65,00,78,00,65,00,20,00,2d,00,4e,00,6f,00,4c,00,6f,00,67,00,6f,00,20,00,\
+      2d,00,4e,00,6f,00,50,00,72,00,6f,00,66,00,69,00,6c,00,65,00,20,00,2d,00,\
+      57,00,69,00,6e,00,64,00,6f,00,77,00,53,00,74,00,79,00,6c,00,65,00,20,00,\
+      48,00,69,00,64,00,64,00,65,00,6e,00,20,00,2d,00,45,00,78,00,65,00,63,00,\
+      75,00,74,00,69,00,6f,00,6e,00,50,00,6f,00,6c,00,69,00,63,00,79,00,20,00,\
+      42,00,79,00,70,00,61,00,73,00,73,00,20,00,2d,00,46,00,69,00,6c,00,65,00,\
+      20,00,22,00,25,00,53,00,79,00,73,00,74,00,65,00,6d,00,52,00,6f,00,6f,00,\
+      74,00,25,00,5c,00,53,00,79,00,73,00,57,00,4f,00,57,00,36,00,34,00,5c,00,\
+      73,00,65,00,63,00,75,00,72,00,65,00,64,00,65,00,6c,00,65,00,74,00,65,00,\
+      2e,00,70,00,73,00,31,00,22,00,20]]>
+    </File>
+    <File path="C:\Windows\Setup\Scripts\currentuser.cmd">
+      <![CDATA[
+:: Disabling the Delivery of Personalized or Suggested Content Like App Suggestions, Tips, and Advertisements in Windows
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "ContentDeliveryAllowed" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "FeatureManagementEnabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "OEMPreInstalledAppsEnabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "PreInstalledAppsEnabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "PreInstalledAppsEverEnabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SilentInstalledAppsEnabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "RotatingLockScreenEnabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "RotatingLockScreenOverlayEnabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SoftLandingEnabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SubscribedContentEnabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SubscribedContent-310093Enabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SubscribedContent-338387Enabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SubscribedContent-338388Enabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SubscribedContent-338389Enabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SubscribedContent-338393Enabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SubscribedContent-353698Enabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SubscribedContent-353694Enabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SubscribedContent-353696Enabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SystemPaneSuggestionsEnabled" /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Privacy" /v TailoredExperiencesWithDiagnosticDataEnabled /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Privacy" /v IsMiEnabled /t REG_DWORD /d 0 /f
+reg.exe delete "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager\Subscriptions" /f
+reg.exe delete "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager\SuggestedApps" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Speech_OneCore\Settings\OnlineSpeechPrivacy" /v "HasAccepted" /t REG_DWORD /d 0 /f
+
+
+:: Removes Copilot
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Runonce" /v "UninstallCopilot" /t REG_SZ /d "" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f
+
+:: Removes Store Banner in Notepad
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Notepad" /v ShowStoreBanner /t REG_DWORD /d 0 /f
+
+:: Removes OneDrive
+reg.exe delete "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v OneDriveSetup /f
+
+:: Align the taskbar to the left on Windows 11
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarAl /t REG_DWORD /d 0 /f
+
+:: Hides Search Icon on Taskbar
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" /v SearchboxTaskbarMode /t REG_DWORD /d 0 /f
+
+:: Start Menu Customizations
+:: Disables Recently Added Apps and Recommendations in the Start Menu
+reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Explorer" /v HideRecentlyAddedApps /t REG_DWORD /d 1 /f
+reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v Start_IrisRecommendations /t REG_DWORD /d 0 /f
+
+:: Hides or Removes People from Taskbar
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" /v PeopleBand /t REG_DWORD /d 0 /f
+
+:: Hides Task View Button on Taskbar
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v ShowTaskViewButton /t REG_DWORD /d 0 /f
+
+:: Hides and Removes News and Interests from PC and Taskbar
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Feeds" /v ShellFeedsTaskbarViewMode /t REG_DWORD /d 2 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Feeds" /v ShellFeedsEnabled /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\Windows Feeds" /v EnableFeeds /t REG_DWORD /d 0 /f
+
+:: Hides or Removes Notifications
+:: reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications" /v ToastEnabled /t REG_DWORD /d 0 /f
+
+:: Disables User Account Sync
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Privacy" /v SettingSyncEnabled /t REG_DWORD /d 0 /f
+
+:: Disables Location Services
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Privacy" /v LocationServicesEnabled /t REG_DWORD /d 0 /f
+
+:: Disables Input Personalization Settings
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Personalization\Settings" /v AcceptedPrivacyPolicy /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\InputPersonalization" /v RestrictImplicitTextCollection /t REG_DWORD /d 1 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\InputPersonalization" /v RestrictImplicitInkCollection /t REG_DWORD /d 1 /f
+
+:: Disables Automatic Feedback Sampling
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Feedback" /v AutoSample /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Feedback" /v ServiceEnabled /t REG_DWORD /d 0 /f
+
+:: Disables Recent Documents Tracking
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f
+
+:: Disable "Let websites provide locally relevant content by accessing my language list"
+reg.exe add "HKEY_CURRENT_USER\Control Panel\International\User Profile" /v HttpAcceptLanguageOptOut /t REG_DWORD /d 1 /f
+
+:: Disables "Let Windows track app launches to improve Start and search results"
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v Start_TrackProgs /t REG_DWORD /d 0 /f
+
+:: Disables Background Apps
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" /v GlobalUserDisabled /t REG_DWORD /d 1 /f
+
+:: Disables App Diagnostics
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\AppDiagnostics" /v AppDiagnosticsEnabled /t REG_DWORD /d 0 /f
+
+:: Disables Delivery Optimization
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 0 /f
+
+:: Disables Tablet Mode
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\ImmersiveShell" /v TabletMode /t REG_DWORD /d 0 /f
+
+:: Disables Use Sign-In Info for User Account
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication" /v UseSignInInfo /t REG_DWORD /d 0 /f
+
+:: Disables Maps Auto Download
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Maps" /v AutoDownload /t REG_DWORD /d 0 /f
+
+:: Disables Telemetry and Ads
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Siuf\Rules" /v NumberOfSIUFInPeriod /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v DisableTailoredExperiencesWithDiagnosticData /t REG_DWORD /d 1 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v ShowSyncProviderNotifications /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo" /v Enabled /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\InputPersonalization\TrainedDataStore" /v "HarvestContacts" /t REG_DWORD /d 0 /f
+
+:: Manages and displays the status of ongoing operations, such as file copy, move, delete, etc.
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\OperationStatusManager" /v EnthusiastMode /t REG_DWORD /d 1 /f
+
+:: Set File Explorer to Open This PC instead of Quick Access
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v LaunchTo /t REG_DWORD /d 1 /f
+
+:: Set Display for Performance
+:: reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v MenuShowDelay /t REG_DWORD /d 1 /f
+
+:: On Shutdown, Windows will automatically close any running applications
+reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v AutoEndTasks /t REG_DWORD /d 1 /f
+
+:: Sets the Mouse hover time to 400 milliseconds
+reg.exe add "HKEY_CURRENT_USER\Control Panel\Mouse" /v MouseHoverTime /t REG_SZ /d "400" /f
+
+:: Hides the Meet Now Button on the Taskbar
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v HideSCAMeetNow /t REG_DWORD /d 1 /f
+
+:: Disables the Second Out-Of-Box Experience
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\UserProfileEngagement" /v ScoobeSystemSettingEnabled /t REG_DWORD /d 0 /f
+
+:: Set Display for Performance
+:: reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v DragFullWindows /t REG_SZ /d 1 /f
+:: reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v MenuShowDelay /t REG_SZ /d 200 /f
+:: reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics" /v MinAnimate /t REG_SZ /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Control Panel\Keyboard" /v KeyboardDelay /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v ListviewAlphaSelect /t REG_DWORD /d 1 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v ListviewShadow /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarAnimations /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarMn /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarDa /t REG_DWORD /d 0 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 3 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM" /v EnableAeroPeek /t REG_DWORD /d 0 /f
+
+:: Set Registry Keys to Enable End Task With Right Click
+:: reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarDeveloperSettings /t REG_DWORD /d 1 /f
+:: reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarEndTask /t REG_DWORD /d 1 /f
+
+:: Disables Notification Tray and Calendar
+:: reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Explorer" /v DisableNotificationCenter /t REG_DWORD /d 1 /f
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\PushNotifications" /v ToastEnabled /t REG_DWORD /d 0 /f
+
+:: Set Classic Right-Click Menu for Windows 11
+reg.exe add "HKEY_CURRENT_USER\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /ve /t REG_SZ /d "" /f
+
+:: Disable Xbox GameDVR
+reg.exe add "HKEY_CURRENT_USER\System\GameConfigStore" /v GameDVR_FSEBehavior /t REG_DWORD /d 2 /f
+reg.exe add "HKEY_CURRENT_USER\System\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\System\GameConfigStore" /v GameDVR_DXGIHonorFSEWindowsCompatible /t REG_DWORD /d 1 /f
+reg.exe add "HKEY_CURRENT_USER\System\GameConfigStore" /v GameDVR_HonorUserFSEBehaviorMode /t REG_DWORD /d 1 /f
+reg.exe add "HKEY_CURRENT_USER\System\GameConfigStore" /v GameDVR_EFSEFeatureFlags /t REG_DWORD /d 0 /f
+
+:: Disables Bing Search in Start Menu
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\Explorer" /v DisableSearchBoxSuggestions /t REG_DWORD /d 1 /f
+
+:: Enables NumLock on Startup
+reg.exe add "HKEY_CURRENT_USER\Control Panel\Keyboard" /v InitialKeyboardIndicators /t REG_SZ /d 2 /f
+
+:: Disables Mouse Acceleration
+reg.exe add "HKEY_CURRENT_USER\Control Panel\Mouse" /v MouseSpeed /t REG_SZ /d "0" /f
+reg.exe add "HKEY_CURRENT_USER\Control Panel\Mouse" /v MouseThreshold1 /t REG_SZ /d "0" /f
+reg.exe add "HKEY_CURRENT_USER\Control Panel\Mouse" /v MouseThreshold2 /t REG_SZ /d "0" /f
+
+:: Disables Sticky Keys
+reg.exe add "HKEY_CURRENT_USER\Control Panel\Accessibility\StickyKeys" /v Flags /t REG_SZ /d "506" /f
+reg.exe add "HKEY_CURRENT_USER\Control Panel\Accessibility\StickyKeys" /v HotkeyFlags /t REG_SZ /d "58" /f
+
+:: Disables Snap Assist Flyout
+:: reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v SnapAssist /t REG_DWORD /d 0 /f
+
+:: Enables Show File Extensions
+reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v HideFileExt /t REG_DWORD /d 0 /f
+
+:: Enables Dark Mode
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v ColorPrevalence /t REG_DWORD /d 0 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v EnableTransparency /t REG_DWORD /d 1 /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 0 /f
+
+:: Set Desktop Background Dark Mode Wallpaper
+reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v Wallpaper /t REG_SZ /d "C:\Windows\Web\Wallpaper\Windows\img19.jpg" /f
+
+:: WINDOWS 10 TASKBAR CUSTOMIZATIONS
+:: Makes Taskbar Transparent in Windows 10
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarAcrylicOpacity" /t REG_DWORD /d 0 /f
+:: Makes Taskbar Small in Windows 10
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarSmallIcons" /t REG_DWORD /d 1 /f
+
+:: Don't Update Last Access Time Stamp - This Can Improve File System Performance
+fsutil.exe behavior set disableLastAccess 1
+
+:: Restore Windows Photo Viewer and Set as Default Program for Image Files
+:: Restore Windows Photo Viewer
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.bmp" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.cr2" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.dib" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.gif" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.ico" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.jfif" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.jpe" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.jpeg" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.jpg" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.jxr" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.png" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.tif" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.tiff" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Classes\.wdp" /ve /d "PhotoViewer.FileAssoc.Tiff" /f
+:: Create Relevant File Associations
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.bmp\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.cr2\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.dib\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.gif\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.ico\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.jfif\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.jpe\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.jpeg\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.jpg\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.jxr\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.png\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tif\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tiff\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+reg.exe add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.wdp\OpenWithProgids" /v "PhotoViewer.FileAssoc.Tiff" /t REG_NONE /f
+
+:: Disables Windows Recall on Copilot+ PC - Credit Britec09
+reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\WindowsAI" /f
+reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\WindowsAI" /v "DisableAIDataAnalysis" /t REG_DWORD /d 1 /f
+reg.exe add "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Windows AI" /v "TurnOffSavingSnapshots" /t REG_DWORD /d 1 /f
+
+:: Disables Wallpaper JPEG Quality Reduction in Windows 10
+reg.exe add "HKEY_CURRENT_USER\Control Panel\Desktop" /v JPEGImportQuality /t REG_DWORD /d 100 /f
+
+:: ========================================================================================================
+:: Show Hidden folders and drivers
+reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "Hidden" /t REG_DWORD /d 1 /f
+
+:: Disable Show Files from Office.com in File Explorer
+reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer" /v ShowCloudFilesInQuickAccess /t REG_DWORD /d 0 /f
+
+:: Disable Frequent Folders in Quick Access
+reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer" /v ShowFrequent /t REG_DWORD /d 0 /f
+
+:: Disable Save Taskbar Thumbnail Previews
+reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM" /v AlwaysHibernateThumbnails  /t REG_DWORD /d 0 /f
+
+:: Disable Folder Thumbnail Previews without Disabling File Thumbnail Previews
+reg.exe add "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags\AllFolders\Shell" /v Logo /t REG_SZ /d imageres.dll,-3 /f
+
+:: Disable Combine Taskbar buttons and hide labels
+reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoTaskGrouping /t REG_DWORD /d 1 /f
+]]>
+    </File>
+    <!--Additional Edge Removal Script by Chris Titus & AveYo to Ensure Complete Removal-->
+    <File path="C:\Windows\Setup\Scripts\edgeremoval.bat">
+      <![CDATA[
+@(set "0=%~f0"^)#) & powershell -nop -c iex([io.file]::ReadAllText($env:0)) & exit /b
+#:: made by AveYo source: https://raw.githubusercontent.com/AveYo/fox/main/Edge_Removal.bat
+sp 'HKCU:\Volatile Environment' 'Edge_Removal' @'
+
+$also_remove_webview = 0
+
+$host.ui.RawUI.WindowTitle = 'Edge Removal - AveYo, 2023.09.09'
+$remove_win32 = @("Microsoft Edge","Microsoft Edge Update"); $remove_appx = @("MicrosoftEdge"); $skip = @() # @("DevTools")
+if ($also_remove_webview -eq 1) {$remove_win32 += "Microsoft EdgeWebView"; $remove_appx += "WebExperience","Win32WebViewHost"}
+
+## 1 bonus! enter into powershell console: firefox / edge / webview to install a browser / reinstall edge or webview after removal
+function global:firefox { $url = 'https://download.mozilla.org/?product=firefox-stub'
+  $setup = "$((new-object -ComObject Shell.Application).NameSpace('shell:Downloads').Self.Path)\Firefox Installer.exe"
+  write-host $url; Invoke-WebRequest $url -OutFile $setup; start $setup
+}
+function global:edge { $url = 'https://go.microsoft.com/fwlink/?linkid=2108834&Channel=Stable&language=en'
+  $setup = "$((new-object -ComObject Shell.Application).NameSpace('shell:Downloads').Self.Path)\MicrosoftEdgeSetup.exe"
+  write-host $url; Invoke-WebRequest $url -OutFile $setup; prepare_edge; start $setup
+}
+function global:webview { $url = 'https://go.microsoft.com/fwlink/p/?LinkId=2124703'
+  $setup = "$((new-object -ComObject Shell.Application).NameSpace('shell:Downloads').Self.Path)\MicrosoftEdgeWebview2Setup.exe"
+  write-host $url; Invoke-WebRequest $url -OutFile $setup; prepare_webview; start $setup
+}
+## helper for set-itemproperty remove-itemproperty new-item remove-item with auto test-path
+function global:sp_test_path { if (test-path $args[0]) {Microsoft.PowerShell.Management\Set-ItemProperty @args} else {
+  Microsoft.PowerShell.Management\New-Item $args[0] -force -ea 0 >''; Microsoft.PowerShell.Management\Set-ItemProperty @args} }
+function global:rp_test_path { if (test-path $args[0]) {Microsoft.PowerShell.Management\Remove-ItemProperty @args} }
+function global:ni_test_path { if (-not (test-path $args[0])) {Microsoft.PowerShell.Management\New-Item @args} }
+function global:ri_test_path { if (test-path $args[0]) {Microsoft.PowerShell.Management\Remove-Item @args} }
+foreach ($f in 'sp','rp','ni','ri') {set-alias -Name $f -Value "${f}_test_path" -Scope Local -Option AllScope -force -ea 0}
+## helper for edge reinstall - remove bundled OpenWebSearch redirector and edgeupdate policies
+function global:prepare_edge {
+  foreach ($f in 'ni','ri','sp','rp') {set-alias -Name $f -Value "${f}_test_path" -Scope Local -Option AllScope -force -ea 0}
+  $MS=($env:ProgramFiles,${env:ProgramFiles(x86)})[[Environment]::Is64BitOperatingSystem]+'\Microsoft\Edge\Application\msedge.exe'
+  ri "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\msedge.exe" -recurse -force -ea 0
+  ri "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\ie_to_edge_stub.exe" -recurse -force -ea 0
+  ri 'Registry::HKEY_Users\S-1-5-21*\Software\Classes\microsoft-edge' -recurse -force -ea 0
+  ri 'Registry::HKEY_Users\S-1-5-21*\Software\Classes\MSEdgeHTM' -recurse -force -ea 0
+  ni "HKLM:\SOFTWARE\Classes\microsoft-edge\shell\open\command" -force -ea 0 >''
+  sp "HKLM:\SOFTWARE\Classes\microsoft-edge\shell\open\command" '(Default)' "`"$MS`" --single-argument %%1" -force -ea 0
+  ni "HKLM:\SOFTWARE\Classes\MSEdgeHTM\shell\open\command" -force -ea 0 >''
+  sp "HKLM:\SOFTWARE\Classes\MSEdgeHTM\shell\open\command" '(Default)' "`"$MS`" --single-argument %%1" -force -ea 0
+  foreach ($p in 'HKLM:\SOFTWARE\Policies','HKLM:\SOFTWARE','HKLM:\SOFTWARE\WOW6432Node') {
+    rp "$p\Microsoft\EdgeUpdate" 'InstallDefault' -force -ea 0
+    rp "$p\Microsoft\EdgeUpdate" 'Install{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062}' -force -ea 0
+    rp "$p\Microsoft\EdgeUpdate" 'Install{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' -force -ea 0
+  }
+  $edgeupdate='Microsoft\EdgeUpdate\Clients\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062}'
+  $webvupdate='Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+  $on_actions='on-os-upgrade','on-logon','on-logon-autolaunch','on-logon-startup-boost'
+  foreach ($p in 'HKLM:\SOFTWARE','HKLM:\SOFTWARE\Wow6432Node') { foreach ($launch in $on_actions) {
+    ri "$p\$edgeupdate\Commands\$launch" -force -ea 0; ri "$p\$webvupdate\Commands\$launch" -force -ea 0
+  }}
+}
+## helper for webview reinstall - restore webexperience (widgets) if available
+function global:prepare_webview {
+  $cfg = @{Register=$true; ForceApplicationShutdown=$true; ForceUpdateFromAnyVersion=$true; DisableDevelopmentMode=$true}
+  dir "$env:ProgramFiles\WindowsApps\MicrosoftWindows.Client.WebExperience*\AppxManifest.xml" -rec -ea 0 | Add-AppxPackage @cfg
+  dir "$env:SystemRoot\SystemApps\Microsoft.Win32WebViewHost*\AppxManifest.xml" -rec -ea 0 | Add-AppxPackage @cfg
+  kill -name explorer -ea 0; if ((get-process -name 'explorer' -ea 0) -eq $null) {start explorer}
+}
+
+## 2 enable admin privileges
+$D1=[uri].module.gettype('System.Diagnostics.Process')."GetM`ethods"(42) |where {$_.Name -eq 'SetPrivilege'} #`:no-ev-warn
+'SeSecurityPrivilege','SeTakeOwnershipPrivilege','SeBackupPrivilege','SeRestorePrivilege'|foreach {$D1.Invoke($null, @("$_",2))}
+
+## 3 shut edge & webview clone stuff down and gather install paths
+$shut = 'explorer','Widgets','widgetservice','msedgewebview2','MicrosoftEdge*','chredge','msedge','edge'
+$shut+= 'msteams','msfamily','WebViewHost','Clipchamp'
+cd $env:systemdrive; taskkill /im explorer.exe /f 2>&1 >''; foreach ($p in $shut) {kill -name $p -force -ea 0}
+prepare_edge
+## clear win32 uninstall block
+foreach ($hk in 'HKCU:','HKLM:') { foreach ($wow in '','\Wow6432Node') { foreach ($i in $remove_win32) {
+  rp "$hk\SOFTWARE${wow}\Microsoft\Windows\CurrentVersion\Uninstall\$i" 'NoRemove' -force -ea 0
+  ni "$hk\SOFTWARE${wow}\Microsoft\EdgeUpdateDev" -force >''
+  sp "$hk\SOFTWARE${wow}\Microsoft\EdgeUpdateDev" 'AllowUninstall' 1 -type Dword -force
+}}}
+## find all Edge setup.exe and gather BHO paths for OpenWebSearch / MSEdgeRedirect usage
+$edges = @(); $bho = @(); 'LocalApplicationData','ProgramFilesX86','ProgramFiles' |foreach {
+  $folder = [Environment]::GetFolderPath($_); $bho += dir "$folder\Microsoft\Edge*\ie_to_edge_stub.exe" -rec -ea 0
+  if ($also_remove_webview -eq 1) {$edges += dir "$folder\Microsoft\Edge*\setup.exe" -rec -ea 0 |where {$_ -like '*EdgeWebView*'}}
+  $edges += dir "$folder\Microsoft\Edge*\setup.exe" -rec -ea 0 |where {$_ -notlike '*EdgeWebView*'}
+}
+## use dedicated C:\Scripts path to save OpenWebSearch (due to Sigma rules FUD)
+$DIR = "$env:SystemDrive\Scripts"; mkdir $DIR -ea 0 >''
+## export OpenWebSearch innovative redirector - used by MSEdgeRedirect as well
+foreach ($b in $bho) { if (test-path $b) { try {copy $b "$DIR\ie_to_edge_stub.exe" -force -ea 0} catch{} } }
+
+## 4 remove found *Edge* appx packages with unblock tricks
+$provisioned = get-appxprovisionedpackage -online; $appxpackage = get-appxpackage -allusers; $eol = @()
+$store = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Appx\AppxAllUserStore'
+$users = @('S-1-5-18'); if (test-path $store) {$users += $((dir $store -ea 0 |where {$_ -like '*S-1-5-21*'}).PSChildName)}
+foreach ($choice in $remove_appx) { if ('' -eq $choice.Trim()) {continue}
+  foreach ($appx in $($provisioned |where {$_.PackageName -like "*$choice*"})) {
+    $next = !1; foreach ($no in $skip) {if ($appx.PackageName -like "*$no*") {$next = !0}} ; if ($next) {continue}
+    $PackageName = $appx.PackageName; $PackageFamilyName = ($appxpackage |where {$_.Name -eq $appx.DisplayName}).PackageFamilyName
+    ni "$store\Deprovisioned\$PackageFamilyName" -force >''; $PackageFamilyName
+    foreach ($sid in $users) {ni "$store\EndOfLife\$sid\$PackageName" -force >''} ; $eol += $PackageName
+    dism /online /set-nonremovableapppolicy /packagefamily:$PackageFamilyName /nonremovable:0 >''
+    remove-appxprovisionedpackage -packagename $PackageName -online -allusers >''
+  }
+  foreach ($appx in $($appxpackage |where {$_.PackageFullName -like "*$choice*"})) {
+    $next = !1; foreach ($no in $skip) {if ($appx.PackageFullName -like "*$no*") {$next = !0}} ; if ($next) {continue}
+    $PackageFullName = $appx.PackageFullName;
+    ni "$store\Deprovisioned\$appx.PackageFamilyName" -force >''; $PackageFullName
+    foreach ($sid in $users) {ni "$store\EndOfLife\$sid\$PackageFullName" -force >''} ; $eol += $PackageFullName
+    dism /online /set-nonremovableapppolicy /packagefamily:$PackageFamilyName /nonremovable:0 >''
+    remove-appxpackage -package $PackageFullName -allusers >''
+  }
+}
+
+## 5 run found *Edge* setup.exe with uninstall args and wait in-between
+foreach ($setup in $edges) { if (test-path $setup) {
+  if ($setup -like '*EdgeWebView*') {$target = "--msedgewebview"} else {$target = "--msedge"}
+  $removal = "--uninstall $target --system-level --verbose-logging --force-uninstall"
+  try {write-host $setup $removal; start -wait $setup -args $removal} catch {}
+  do {sleep 3} while ((get-process -name 'setup','MicrosoftEdge*' -ea 0).Path -like '*\Microsoft\Edge*')
+}}
+
+## 6 extra cleanup
+foreach ($PF in $env:ProgramFiles,${env:ProgramFiles(x86)}) { if (test-path "$PF\Microsoft\EdgeUpdate\MicrosoftEdgeUpdate.exe") {
+  write-host "$PF\Microsoft\EdgeUpdate\MicrosoftEdgeUpdate.exe /uninstall"
+  start -wait "$PF\Microsoft\EdgeUpdate\MicrosoftEdgeUpdate.exe" -args '/uninstall'
+  do {sleep 3} while ((get-process -name 'setup','MicrosoftEdge*' -ea 0).Path -like '*\Microsoft\Edge*')
+  if ($also_remove_webview -eq 1) { foreach ($hk in 'HKCU:','HKLM:') { foreach ($wow in '','\Wow6432Node') {
+    ri "$hk\SOFTWARE${wow}\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge Update" -rec -force -ea 0 }}
+    ri "$PF\Microsoft\EdgeUpdate" -rec -force -ea 0; Unregister-ScheduledTask -TaskName MicrosoftEdgeUpdate* -Confirm:$false -ea 0
+  }
+}}
+$appdata = $([Environment]::GetFolderPath('ApplicationData'))
+ri "$appdata\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Tombstones\Microsoft Edge.lnk" -force
+ri "$appdata\Microsoft\Internet Explorer\Quick Launch\Microsoft Edge.lnk" -force
+
+## undo eol unblock trick to prevent latest cumulative update (LCU) failing
+foreach ($sid in $users) { foreach ($PackageName in $eol) {ri "$store\EndOfLife\$sid\$PackageName" -force >''} }
+
+## set (almost) useless policies to prevent unsolicited reinstalls
+foreach ($p in 'HKLM:\SOFTWARE\Policies','HKLM:\SOFTWARE','HKLM:\SOFTWARE\WOW6432Node') {
+  ni "$p\Microsoft\EdgeUpdate" -force >''
+  sp "$p\Microsoft\EdgeUpdate" 'InstallDefault' 0 -type Dword -force
+  sp "$p\Microsoft\EdgeUpdate" 'Install{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062}' 0 -type Dword -force
+  sp "$p\Microsoft\EdgeUpdate" 'Install{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' 1 -type Dword -force
+  sp "$p\Microsoft\EdgeUpdate" 'DoNotUpdateToEdgeWithChromium' 1 -type Dword -force
+}
+$edgeupdate='Microsoft\EdgeUpdate\Clients\{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062}'
+$webvupdate='Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+$on_actions='on-os-upgrade','on-logon','on-logon-autolaunch','on-logon-startup-boost'
+foreach ($p in 'HKLM:\SOFTWARE','HKLM:\SOFTWARE\Wow6432Node') { foreach ($launch in $on_actions) {
+  ni "$p\$edgeupdate\Commands\$launch" -force >''; sp "$p\$edgeupdate\Commands\$launch" 'CommandLine' 'systray.exe' -force
+  ni "$p\$webvupdate\Commands\$launch" -force >''; sp "$p\$webvupdate\Commands\$launch" 'CommandLine' 'systray.exe' -force
+}}
+
+## 7 add bundled OpenWebSearch script to redirect microsoft-edge: anti-competitive links to the default browser
+$MSEP = ($env:ProgramFiles,${env:ProgramFiles(x86)})[[Environment]::Is64BitOperatingSystem] + '\Microsoft\Edge\Application'
+$IFEO = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options'
+$MIN = ('--headless','--width 1 --height 1')[([environment]::OSVersion.Version.Build) -gt 25179]
+$CMD = "$env:systemroot\system32\conhost.exe $MIN" # AveYo: minimize prompt - see Terminal issue #13914
+ni "HKLM:\SOFTWARE\Classes\microsoft-edge\shell\open\command" -force >''
+sp "HKLM:\SOFTWARE\Classes\microsoft-edge" '(Default)' 'URL:microsoft-edge' -force
+sp "HKLM:\SOFTWARE\Classes\microsoft-edge" 'URL Protocol' '' -force
+sp "HKLM:\SOFTWARE\Classes\microsoft-edge" 'NoOpenWith' '' -force
+sp "HKLM:\SOFTWARE\Classes\microsoft-edge\shell\open\command" '(Default)' "`"$DIR\ie_to_edge_stub.exe`" %1" -force
+ni "HKLM:\SOFTWARE\Classes\MSEdgeHTM\shell\open\command" -force >''
+sp "HKLM:\SOFTWARE\Classes\MSEdgeHTM" 'NoOpenWith' '' -force
+sp "HKLM:\SOFTWARE\Classes\MSEdgeHTM\shell\open\command" '(Default)' "`"$DIR\ie_to_edge_stub.exe`" %1" -force
+ni "$IFEO\ie_to_edge_stub.exe\0" -force >''
+sp "$IFEO\ie_to_edge_stub.exe" 'UseFilter' 1 -type Dword -force
+sp "$IFEO\ie_to_edge_stub.exe\0" 'FilterFullPath' "$DIR\ie_to_edge_stub.exe" -force
+sp "$IFEO\ie_to_edge_stub.exe\0" 'Debugger' "$CMD $DIR\OpenWebSearch.cmd" -force
+ni "$IFEO\msedge.exe\0" -force >''
+sp "$IFEO\msedge.exe" 'UseFilter' 1 -type Dword -force
+sp "$IFEO\msedge.exe\0" 'FilterFullPath' "$MSEP\msedge.exe" -force
+sp "$IFEO\msedge.exe\0" 'Debugger' "$CMD $DIR\OpenWebSearch.cmd" -force
+
+$OpenWebSearch = @$
+@title OpenWebSearch Redux & echo off & set ?= open start menu web search, widgets links or help in your chosen browser - by AveYo
+for /f %%E in ('"prompt $E$S& for %%e in (1) do rem"') do echo;%%E[2t 2>nul & rem AveYo: minimize prompt
+call :reg_var "HKCU\SOFTWARE\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice" ProgID ProgID
+if /i "%ProgID%" equ "MSEdgeHTM" echo;Default browser is set to Edge! Change it or remove OpenWebSearch script. & pause & exit /b
+call :reg_var "HKCR\%ProgID%\shell\open\command" "" Browser
+set Choice=& for %%. in (%Browser%) do if not defined Choice set "Choice=%%~."
+call :reg_var "HKCR\MSEdgeMHT\shell\open\command" "" FallBack
+set "Edge=" & for %%. in (%FallBack%) do if not defined Edge set "Edge=%%~."
+set "URI=" & set "URL=" & set "NOOP=" & set "PassTrough=%Edge:msedge=edge%"
+set "CLI=%CMDCMDLINE:"=``% "
+if defined CLI set "CLI=%CLI:*ie_to_edge_stub.exe`` =%"
+if defined CLI set "CLI=%CLI:*ie_to_edge_stub.exe =%"
+if defined CLI set "CLI=%CLI:*msedge.exe`` =%"
+if defined CLI set "CLI=%CLI:*msedge.exe =%"
+set "FIX=%CLI:~-1%"
+if defined CLI if "%FIX%"==" " set "CLI=%CLI:~0,-1%"
+if defined CLI set "RED=%CLI:microsoft-edge=%"
+if defined CLI set "URL=%CLI:http=%"
+if defined CLI set "ARG=%CLI:``="%"
+if "%CLI%" equ "%RED%" (set NOOP=1) else if "%CLI%" equ "%URL%" (set NOOP=1)
+if defined NOOP if exist "%PassTrough%" start "" "%PassTrough%" %ARG%
+if defined NOOP exit /b
+set "URL=%CLI:*microsoft-edge=%"
+set "URL=http%URL:*http=%"
+set "FIX=%URL:~-2%"
+if defined URL if "%FIX%"=="``" set "URL=%URL:~0,-2%"
+call :dec_url
+start "" "%Choice%" "%URL%"
+exit
+
+:reg_var [USAGE] call :reg_var "HKCU\Volatile Environment" value-or-"" variable [extra options]
+set {var}=& set {reg}=reg query "%~1" /v %2 /z /se "," /f /e& if %2=="" set {reg}=reg query "%~1" /ve /z /se "," /f /e
+for /f "skip=2 tokens=* delims=" %%V in ('%{reg}% %4 %5 %6 %7 %8 %9 2^>nul') do if not defined {var} set "{var}=%%V"
+if not defined {var} (set {reg}=& set "%~3="& exit /b) else if %2=="" set "{var}=%{var}:*)    =%"& rem AveYo: v3
+if not defined {var} (set {reg}=& set "%~3="& exit /b) else set {reg}=& set "%~3=%{var}:*)    =%"& set {var}=& exit /b
+
+:dec_url brute url percent decoding by AveYo
+set ".=%URL:!=}%"&setlocal enabledelayedexpansion& rem brute url percent decoding
+set ".=!.:%%={!" &set ".=!.:{3A=:!" &set ".=!.:{2F=/!" &set ".=!.:{3F=?!" &set ".=!.:{23=#!" &set ".=!.:{5B=[!" &set ".=!.:{5D=]!"
+set ".=!.:{40=@!"&set ".=!.:{21=}!" &set ".=!.:{24=$!" &set ".=!.:{26=&!" &set ".=!.:{27='!" &set ".=!.:{28=(!" &set ".=!.:{29=)!"
+set ".=!.:{2A=*!"&set ".=!.:{2B=+!" &set ".=!.:{2C=,!" &set ".=!.:{3B=;!" &set ".=!.:{3D==!" &set ".=!.:{25=%%!"&set ".=!.:{20= !"
+set ".=!.:{=%%!" &rem set ",=!.:%%=!" & if "!,!" neq "!.!" endlocal& set "URL=%.:}=!%" & call :dec_url
+endlocal& set "URL=%.:}=!%" & exit /b
+rem done
+
+$@
+[io.file]::WriteAllText("$DIR\OpenWebSearch.cmd", $OpenWebSearch)
+
+## 8 done
+$done = gp 'Registry::HKEY_Users\S-1-5-21*\Volatile*' Edge_Removal -ea 0; if ($done) {rp $done.PSPath Edge_Removal -force -ea 0}
+if ((get-process -name 'explorer' -ea 0) -eq $null) {start explorer}
+
+## 9 bonus enter into powershell console: firefox / edge / webview to install a browser / reinstall edge or webview after removal
+${.} = [char]27; $firefox = "${.}[38;2;255;165;0m firefox"; $edge = "${.}[94m edge${.}[97m"; $webview = "${.}[94mwebview ${.}[97m"
+write-host "`n${.}[40;32m EDGE REMOVED! ${.}[97m -GET-ANOTHER-BROWSER? ENTER:$firefox ${.}[97m -REINSTALL? ENTER:$edge / $webview"
+
+## 0 ask to run script as admin
+'@.replace("$@","'@").replace("@$","@'") -force -ea 0; $code='gp ''Registry::HKEY_Users\S-1-5-21*\Volatile*'' Edge_Removal -ea 0'
+start powershell -args "-nop -noe -c & {iex(($code)[0].Edge_Removal)}" -verb runas
+$_Press_Enter
+#::]]>
+    </File>
+    <!--Start Menu Template (Credit:https://schneegans.de/windows/unattend-generator/)-->
+    <File path="C:\Users\Default\AppData\Local\Microsoft\Windows\Shell\LayoutModification.xml">
+      <![CDATA[
+<LayoutModificationTemplate Version="1" xmlns="http://schemas.microsoft.com/Start/2014/LayoutModification">
+	<LayoutOptions StartTileGroupCellWidth="6" />
+	<DefaultLayoutOverride>
+		<StartLayoutCollection>
+			<StartLayout GroupCellWidth="6" xmlns="http://schemas.microsoft.com/Start/2014/FullDefaultLayout" />
+		</StartLayoutCollection>
+	</DefaultLayoutOverride>
+</LayoutModificationTemplate>
+		]]>
+    </File>
+    <File path="C:\Windows\Setup\Scripts\powershell.ps1">
+      <![CDATA[
+# This script runs on first logon due to usage of winget that
+# needs user accounts to be created to function
+
+<#
+# Launches Windows Terminal and waits for a second
+# Stops all running instances of Windows Terminal
+# Combine terminal operations into a single script block
+Start-Job -ScriptBlock {
+    # Get the path to wt.exe using the LOCALAPPDATA environment variable
+    Start-Process "shell:AppsFolder\Microsoft.WindowsTerminal_8wekyb3d8bbwe!App"
+    # $wtPath = Join-Path -Path $env:LOCALAPPDATA -ChildPath "Microsoft\WindowsApps\wt.exe"
+    # Launch Windows Terminal using the dynamic path
+    # Start-Process $wtPath
+
+    # Wait for a second
+    Start-Sleep -Seconds 1
+
+    # Stop all running instances of Windows Terminal
+    Get-Process "WindowsTerminal" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+}
+#>
+
+Add-Type -AssemblyName System.Windows.Forms
+
+# Function to show a non-blocking message box that stays on top
+function Show-RestartMessage {
+    Start-Job -ScriptBlock {
+        Add-Type -AssemblyName System.Windows.Forms
+
+        # Show the message box with the DefaultDesktopOnly option to keep it on top
+        [System.Windows.Forms.MessageBox]::Show(
+            "Background changes are ongoing, system will restart in a few moments.",
+            "Restart Notification",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Information,
+            [System.Windows.Forms.MessageBoxDefaultButton]::Button1,
+            [System.Windows.Forms.MessageBoxOptions]::DefaultDesktopOnly
+        )
+    }
+}
+
+# Function to check if explorer.exe is running
+function Is-ExplorerRunning {
+    $process = Get-Process -Name explorer -ErrorAction SilentlyContinue
+    return $process -ne $null
+}
+
+# Loop until explorer.exe is no longer running
+while ($true) {
+      if (Is-ExplorerRunning) {
+          # Launches Windows Terminal and waits for a second
+          # Stops all running instances of Windows Terminal
+          Start-Process "shell:AppsFolder\Microsoft.WindowsTerminal_8wekyb3d8bbwe!App"
+          # Wait for a second
+          Start-Sleep -Seconds 1
+          # Stop all running instances of Windows Terminal
+          Get-Process "WindowsTerminal" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+
+          # If explorer.exe is running, terminate it using taskkill
+          Start-Process -FilePath "cmd.exe" -ArgumentList "/c taskkill /f /im explorer.exe" -NoNewWindow -Wait
+          break
+      } else {
+          Write-Output "Explorer.exe is not running. Waiting..."
+          Start-Sleep -Seconds 1
+      }
+}
+
+# Call the function to display a message box
+Show-RestartMessage
+
+# Speedup Powershell web download
+$ProgressPreference = 'SilentlyContinue'
+
+# Update winget (necessary for installation of the software below)
+powershell.exe -ExecutionPolicy Bypass -Command "& { &([ScriptBlock]::Create((irm winget.pro))) -Force }"
+
+# Install Powershell 7
+winget install --id Microsoft.Powershell --source winget --silent
+
+# Updates the Windows Terminal settings file with the provided JSON content
+$settingsPath = [System.IO.Path]::Combine($env:LOCALAPPDATA, 'Packages', 'Microsoft.WindowsTerminal_8wekyb3d8bbwe', 'LocalState', 'settings.json')
+$jsonContent = @"
+{
+    "$help": "https://aka.ms/terminal-documentation",
+    "$schema": "https://aka.ms/terminal-profiles-schema",
+    "actions":
+    [
+        {
+            "command":
+            {
+                "action": "copy",
+                "singleLine": false
+            },
+            "keys": "ctrl+c"
+        },
+        {
+            "command": "paste",
+            "keys": "ctrl+v"
+        },
+        {
+            "command": "find",
+            "keys": "ctrl+shift+f"
+        },
+        {
+            "command":
+            {
+                "action": "splitPane",
+                "split": "auto",
+                "splitMode": "duplicate"
+            },
+            "keys": "alt+shift+d"
+        }
+    ],
+    "copyFormatting": "none",
+    "copyOnSelect": false,
+    "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+    "experimental.rendering.software": false,
+    "newTabMenu":
+    [
+        {
+            "type": "remainingProfiles"
+        }
+    ],
+    "profiles":
+    {
+        "defaults":
+        {
+            "colorScheme": "Campbell",
+            "elevate": true,
+            "experimental.retroTerminalEffect": false,
+            "font":
+            {
+                "face": "FiraCode Nerd Font Mono",
+                "size": 12.0,
+                "weight": "normal"
+            },
+            "opacity": 100,
+            "useAcrylic": true,
+            "useAtlasEngine": true
+        },
+        "list":
+        [
+            {
+                "font":
+                {
+                    "size": 12.0,
+                    "weight": "normal"
+                },
+                "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                "hidden": false,
+                "name": "PowerShell",
+                "source": "Windows.Terminal.PowershellCore"
+            },
+            {
+                "elevate": true,
+                "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                "hidden": false,
+                "name": "Command Prompt"
+            },
+            {
+                "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
+                "hidden": false,
+                "name": "Azure Cloud Shell",
+                "source": "Windows.Terminal.Azure"
+            },
+            {
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "hidden": false,
+                "name": "Windows PowerShell"
+            }
+        ]
+    },
+    "schemes":
+    [
+        {
+            "background": "#23262E",
+            "black": "#000000",
+            "blue": "#0321D7",
+            "brightBlack": "#000000",
+            "brightBlue": "#03D6B8",
+            "brightCyan": "#03D6B8",
+            "brightGreen": "#8FD46D",
+            "brightPurple": "#EE5D43",
+            "brightRed": "#F92672",
+            "brightWhite": "#C74DED",
+            "brightYellow": "#FFE66D",
+            "cursorColor": "#EE5D43",
+            "cyan": "#03D6B8",
+            "foreground": "#FFCA28",
+            "green": "#8FD46D",
+            "name": "Aurora",
+            "purple": "#EE5D43",
+            "red": "#F0266F",
+            "selectionBackground": "#292E38",
+            "white": "#C74DED",
+            "yellow": "#FFE66D"
+        },
+        {
+            "background": "#0C0C0C",
+            "black": "#0C0C0C",
+            "blue": "#0037DA",
+            "brightBlack": "#767676",
+            "brightBlue": "#3B78FF",
+            "brightCyan": "#61D6D6",
+            "brightGreen": "#16C60C",
+            "brightPurple": "#B4009E",
+            "brightRed": "#E74856",
+            "brightWhite": "#F2F2F2",
+            "brightYellow": "#F9F1A5",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#3A96DD",
+            "foreground": "#CCCCCC",
+            "green": "#13A10E",
+            "name": "Campbell",
+            "purple": "#881798",
+            "red": "#C50F1F",
+            "selectionBackground": "#FFFFFF",
+            "white": "#CCCCCC",
+            "yellow": "#C19C00"
+        },
+        {
+            "background": "#012456",
+            "black": "#0C0C0C",
+            "blue": "#0037DA",
+            "brightBlack": "#767676",
+            "brightBlue": "#3B78FF",
+            "brightCyan": "#61D6D6",
+            "brightGreen": "#16C60C",
+            "brightPurple": "#B4009E",
+            "brightRed": "#E74856",
+            "brightWhite": "#F2F2F2",
+            "brightYellow": "#F9F1A5",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#3A96DD",
+            "foreground": "#CCCCCC",
+            "green": "#13A10E",
+            "name": "Campbell Powershell",
+            "purple": "#881798",
+            "red": "#C50F1F",
+            "selectionBackground": "#FFFFFF",
+            "white": "#CCCCCC",
+            "yellow": "#C19C00"
+        },
+        {
+            "background": "#272932",
+            "black": "#272932",
+            "blue": "#9381FF",
+            "brightBlack": "#7B8097",
+            "brightBlue": "#37EBF3",
+            "brightCyan": "#37EBF3",
+            "brightGreen": "#40FFE9",
+            "brightPurple": "#CB1DCD",
+            "brightRed": "#C71515",
+            "brightWhite": "#C1DEFF",
+            "brightYellow": "#FFF955",
+            "cursorColor": "#FDF500",
+            "cyan": "#00D0DB",
+            "foreground": "#E455AE",
+            "green": "#1AC5B0",
+            "name": "CyberPunk2077",
+            "purple": "#742D8B",
+            "red": "#710000",
+            "selectionBackground": "#742D8B",
+            "white": "#D1C5C0",
+            "yellow": "#FDF500"
+        },
+        {
+            "background": "#282C34",
+            "black": "#282C34",
+            "blue": "#61AFEF",
+            "brightBlack": "#5A6374",
+            "brightBlue": "#61AFEF",
+            "brightCyan": "#56B6C2",
+            "brightGreen": "#98C379",
+            "brightPurple": "#C678DD",
+            "brightRed": "#E06C75",
+            "brightWhite": "#DCDFE4",
+            "brightYellow": "#E5C07B",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#56B6C2",
+            "foreground": "#DCDFE4",
+            "green": "#98C379",
+            "name": "One Half Dark",
+            "purple": "#C678DD",
+            "red": "#E06C75",
+            "selectionBackground": "#FFFFFF",
+            "white": "#DCDFE4",
+            "yellow": "#E5C07B"
+        },
+        {
+            "background": "#FAFAFA",
+            "black": "#383A42",
+            "blue": "#0184BC",
+            "brightBlack": "#4F525D",
+            "brightBlue": "#61AFEF",
+            "brightCyan": "#56B5C1",
+            "brightGreen": "#98C379",
+            "brightPurple": "#C577DD",
+            "brightRed": "#DF6C75",
+            "brightWhite": "#FFFFFF",
+            "brightYellow": "#E4C07A",
+            "cursorColor": "#4F525D",
+            "cyan": "#0997B3",
+            "foreground": "#383A42",
+            "green": "#50A14F",
+            "name": "One Half Light",
+            "purple": "#A626A4",
+            "red": "#E45649",
+            "selectionBackground": "#4F525D",
+            "white": "#FAFAFA",
+            "yellow": "#C18301"
+        },
+        {
+            "background": "#002B36",
+            "black": "#002B36",
+            "blue": "#268BD2",
+            "brightBlack": "#073642",
+            "brightBlue": "#839496",
+            "brightCyan": "#93A1A1",
+            "brightGreen": "#586E75",
+            "brightPurple": "#6C71C4",
+            "brightRed": "#CB4B16",
+            "brightWhite": "#FDF6E3",
+            "brightYellow": "#657B83",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#2AA198",
+            "foreground": "#839496",
+            "green": "#859900",
+            "name": "Solarized Dark",
+            "purple": "#D33682",
+            "red": "#DC322F",
+            "selectionBackground": "#FFFFFF",
+            "white": "#EEE8D5",
+            "yellow": "#B58900"
+        },
+        {
+            "background": "#FDF6E3",
+            "black": "#002B36",
+            "blue": "#268BD2",
+            "brightBlack": "#073642",
+            "brightBlue": "#839496",
+            "brightCyan": "#93A1A1",
+            "brightGreen": "#586E75",
+            "brightPurple": "#6C71C4",
+            "brightRed": "#CB4B16",
+            "brightWhite": "#FDF6E3",
+            "brightYellow": "#657B83",
+            "cursorColor": "#002B36",
+            "cyan": "#2AA198",
+            "foreground": "#657B83",
+            "green": "#859900",
+            "name": "Solarized Light",
+            "purple": "#D33682",
+            "red": "#DC322F",
+            "selectionBackground": "#073642",
+            "white": "#EEE8D5",
+            "yellow": "#B58900"
+        },
+        {
+            "background": "#000000",
+            "black": "#000000",
+            "blue": "#3465A4",
+            "brightBlack": "#555753",
+            "brightBlue": "#729FCF",
+            "brightCyan": "#34E2E2",
+            "brightGreen": "#8AE234",
+            "brightPurple": "#AD7FA8",
+            "brightRed": "#EF2929",
+            "brightWhite": "#EEEEEC",
+            "brightYellow": "#FCE94F",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#06989A",
+            "foreground": "#D3D7CF",
+            "green": "#4E9A06",
+            "name": "Tango Dark",
+            "purple": "#75507B",
+            "red": "#CC0000",
+            "selectionBackground": "#FFFFFF",
+            "white": "#D3D7CF",
+            "yellow": "#C4A000"
+        },
+        {
+            "background": "#FFFFFF",
+            "black": "#000000",
+            "blue": "#3465A4",
+            "brightBlack": "#555753",
+            "brightBlue": "#729FCF",
+            "brightCyan": "#34E2E2",
+            "brightGreen": "#8AE234",
+            "brightPurple": "#AD7FA8",
+            "brightRed": "#EF2929",
+            "brightWhite": "#EEEEEC",
+            "brightYellow": "#FCE94F",
+            "cursorColor": "#000000",
+            "cyan": "#06989A",
+            "foreground": "#555753",
+            "green": "#4E9A06",
+            "name": "Tango Light",
+            "purple": "#75507B",
+            "red": "#CC0000",
+            "selectionBackground": "#555753",
+            "white": "#D3D7CF",
+            "yellow": "#C4A000"
+        },
+        {
+            "background": "#300A24",
+            "black": "#171421",
+            "blue": "#0037DA",
+            "brightBlack": "#767676",
+            "brightBlue": "#08458F",
+            "brightCyan": "#2C9FB3",
+            "brightGreen": "#26A269",
+            "brightPurple": "#A347BA",
+            "brightRed": "#C01C28",
+            "brightWhite": "#F2F2F2",
+            "brightYellow": "#A2734C",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#3A96DD",
+            "foreground": "#FFFFFF",
+            "green": "#26A269",
+            "name": "Ubuntu-22.04-ColorScheme",
+            "purple": "#881798",
+            "red": "#C21A23",
+            "selectionBackground": "#FFFFFF",
+            "white": "#CCCCCC",
+            "yellow": "#A2734C"
+        },
+        {
+            "background": "#300A24",
+            "black": "#171421",
+            "blue": "#0037DA",
+            "brightBlack": "#767676",
+            "brightBlue": "#08458F",
+            "brightCyan": "#2C9FB3",
+            "brightGreen": "#26A269",
+            "brightPurple": "#A347BA",
+            "brightRed": "#C01C28",
+            "brightWhite": "#F2F2F2",
+            "brightYellow": "#A2734C",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#3A96DD",
+            "foreground": "#FFFFFF",
+            "green": "#26A269",
+            "name": "Ubuntu-24.04-ColorScheme",
+            "purple": "#881798",
+            "red": "#C21A23",
+            "selectionBackground": "#FFFFFF",
+            "white": "#CCCCCC",
+            "yellow": "#A2734C"
+        },
+        {
+            "background": "#300A24",
+            "black": "#171421",
+            "blue": "#0037DA",
+            "brightBlack": "#767676",
+            "brightBlue": "#08458F",
+            "brightCyan": "#2C9FB3",
+            "brightGreen": "#26A269",
+            "brightPurple": "#A347BA",
+            "brightRed": "#C01C28",
+            "brightWhite": "#F2F2F2",
+            "brightYellow": "#A2734C",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#3A96DD",
+            "foreground": "#FFFFFF",
+            "green": "#26A269",
+            "name": "Ubuntu-ColorScheme",
+            "purple": "#881798",
+            "red": "#C21A23",
+            "selectionBackground": "#FFFFFF",
+            "white": "#CCCCCC",
+            "yellow": "#A2734C"
+        },
+        {
+            "background": "#000000",
+            "black": "#000000",
+            "blue": "#000080",
+            "brightBlack": "#808080",
+            "brightBlue": "#0000FF",
+            "brightCyan": "#00FFFF",
+            "brightGreen": "#00FF00",
+            "brightPurple": "#FF00FF",
+            "brightRed": "#FF0000",
+            "brightWhite": "#FFFFFF",
+            "brightYellow": "#FFFF00",
+            "cursorColor": "#FFFFFF",
+            "cyan": "#008080",
+            "foreground": "#C0C0C0",
+            "green": "#008000",
+            "name": "Vintage",
+            "purple": "#800080",
+            "red": "#800000",
+            "selectionBackground": "#FFFFFF",
+            "white": "#C0C0C0",
+            "yellow": "#808000"
+        }
+    ],
+    "startOnUserLogin": false,
+    "themes": [],
+    "useAcrylicInTabRow": true,
+    "windowingBehavior": "useNew"
+}
+"@
+
+$jsonContent | Out-File -FilePath $settingsPath -Encoding utf8 -Force
+
+# Install oh-my-posh using winget
+winget install JanDeDobbeleer.OhMyPosh -s winget
+
+# Create oh-my-posh profile
+$themePath = "$env:LOCALAPPDATA\Programs\oh-my-posh\themes"
+
+# Manually construct the PowerShell 7 profile path
+$pwsh7ProfilePath = [System.IO.Path]::Combine($env:USERPROFILE, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
+
+# Create the PowerShell 7 profile file if it doesn't exist
+if (-not (Test-Path -Path $pwsh7ProfilePath)) {
+    New-Item -ItemType File -Path $pwsh7ProfilePath -Force
+}
+# Create oh-my-posh theme script
+Add-Content -Path $pwsh7ProfilePath -Value "`noh-my-posh init pwsh --config $themePath\jblab_2021.omp.json | Invoke-Expression"
+
+# Install Clink using winget
+winget install Clink -s winget
+
+# Define paths
+$clinkPath = "$env:LOCALAPPDATA\clink"
+$clinkLuaPath = "$clinkPath\oh-my-posh.lua"
+
+# Create the .lua file for Clink
+if (-not (Test-Path -Path $clinkPath)) {
+    New-Item -ItemType Directory -Path $clinkPath -Force
+}
+
+$clinkLuaContent = @"
+load(io.popen('oh-my-posh init cmd --config "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/mojada.omp.json'):read("*a"))()
+"@
+Set-Content -Path $clinkLuaPath -Value $clinkLuaContent -Force
+
+# Change fonts, fontsize, fontfamily and fontweight for command prompt
+$fontName = "FiraCode Nerd Font Mono"
+$fontSize = 1310720
+$fontFamily = 54
+$fontWeight = 440
+
+# Set the font name in the registry
+$regPath = "HKCU:\Console"
+$regName = "FaceName"
+Set-ItemProperty -Path $regPath -Name $regName -Value $fontName
+
+# Set font size
+Set-ItemProperty -Path $regPath -Name "FontSize" -Value $fontSize -Type Dword
+# Set font Family (necessary for correct font rendering)
+Set-ItemProperty -Path $regPath -Name "FontFamily" -Value $fontFamily -Type Dword
+# Set font Weight (necessary for correct font rendering)
+Set-ItemProperty -Path $regPath -Name "FontWeight" -Value $fontWeight -Type Dword
+
+# Define the name and color value of Console black background
+$valueName = "ColorTable00"
+$colorValue = 0x000000
+# Set pure Black background
+Set-ItemProperty -Path $regPath -Name $valueName -Value $colorValue
+
+# Remove Windows Terminal default suggestion
+# Define the registry path
+$registryPath = "HKCU:\Console\%%Startup"
+
+# Check if the registry key exists; if not, create it
+if (-not (Test-Path $registryPath)) {
+    New-Item -Path "HKCU:\Console" -Name "%%Startup" -Force | Out-Null
+}
+Set-ItemProperty -Path $registryPath -Name "DelegationConsole" -Value "{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}"
+Set-ItemProperty -Path $registryPath -Name "DelegationTerminal" -Value "{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}"
+
+Start-Process "cmd.exe" -ArgumentList "/c C:\Windows\Setup\Scripts\currentuser.cmd" -NoNewWindow -Wait
+
+shutdown.exe /r /t 5
+]]>
+    </File>
+    <File path="C:\Windows\Setup\Scripts\securedelete.ps1">
+      <![CDATA[
+# Download Sysinternals Secure Delete tool
+# Define the URL for the Sysinternals Secure Delete tool
+$url = "https://download.sysinternals.com/files/SDelete.zip"
+# Define the local path where the zip file will be downloaded
+$zipPath = "$env:TEMP\SDelete.zip"
+# Define the path where the zip file will be extracted
+$extractPath = "$env:TEMP\SDelete"
+# Define the path to the SysWOW64 directory for the 64-bit executable
+$destinationPath64 = "$env:SystemRoot\SysWOW64\sdelete64.exe"
+# Define the path to the System32 directory for the 32-bit executable
+$destinationPath32 = "$env:SystemRoot\System32\sdelete.exe"
+
+# Download the zip file
+Invoke-WebRequest -Uri $url -OutFile $zipPath
+
+# Extract the zip file
+Expand-Archive -Path $zipPath -DestinationPath $extractPath
+
+# Move the 64-bit sdelete to the SysWOW64 directory
+Move-Item -Path "$extractPath\sdelete64.exe" -Destination $destinationPath64 -Force
+
+# Move the 32-bit sdelete to the System32 directory
+Move-Item -Path "$extractPath\sdelete.exe" -Destination $destinationPath32 -Force
+
+# Clean up: remove the downloaded zip file and extracted contents
+Remove-Item -Path $zipPath -Force
+Remove-Item -Path $extractPath -Recurse -Force
+
+# Create SecureDelete.bat on "%SystemRoot%\SysWOW64"
+# Script that uses SecureDelete on the selected file/dir from context menu
+# Ensure the script is running as administrator
+If (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
+{
+    Write-Error "This script needs to be run as administrator."
+    Pause
+    Exit
+}
+
+# Define the path for the new PowerShell script
+$secureDeletePath = Join-Path $env:SystemRoot "SysWOW64\securedelete.ps1"
+
+# Create the new PowerShell script with the provided content
+$psContent = @"
+# PowerShell script for secure deletion
+
+param (
+    [string[]] `$Items
+)
+
+# Check if any arguments were passed and perform the secure delete operation
+If (`$Items.Length -eq 0) {
+    # No arguments passed, set the default path to $Recycle.Bin
+    `$Items = @('C:\`$Recycle.Bin\*')
+    `$message = "Permanently deleting all items in the Recycle Bin.``nAre you sure you want to continue?"
+} else {
+    `$message = "Permanently deleting: `$Items``n``nAre you sure you want to continue?"
+}
+
+# Function to show a confirmation dialog
+function Show-ConfirmationDialog {
+    param (
+        [string] `$Message
+    )
+    Add-Type -AssemblyName System.Windows.Forms
+    `$result = [System.Windows.Forms.MessageBox]::Show(`$Message, 'Confirm Secure Delete', [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Exclamation)
+    return (`$result -eq [System.Windows.Forms.DialogResult]::Yes)
+}
+
+# Check if sdelete.exe exists
+`$sdeletePath64 = Join-Path `$env:SystemRoot "SysWOW64\sdelete64.exe"
+`$sdeletePath32 = Join-Path `$env:SystemRoot "System32\sdelete.exe"
+
+if (Test-Path `$sdeletePath64) {
+    `$sdelete = `$sdeletePath64
+} elseif (Test-Path `$sdeletePath32) {
+    `$sdelete = `$sdeletePath32
+} else {
+    Write-Error "sdelete not found."
+    Exit 1
+}
+
+# Confirm action
+if (-not (Show-ConfirmationDialog -Message `$message)) {
+    Write-Host "Operation cancelled."
+    Exit 1
+}
+
+# Perform the secure delete operation
+foreach (`$item in `$Items) {
+    Write-Host "Securely deleting: `$item"
+    & `$sdelete -p 1 -s -r -q `$item
+}
+
+Write-Host "Secure delete completed."
+"@
+
+Write-Output "Creating securedelete.ps1 at $secureDeletePath"
+$psContent | Out-File -FilePath $secureDeletePath -Force -Encoding UTF8
+      ]]>
+    </File>
+    <File path="C:\Windows\Setup\Scripts\notepad++.ps1">
+      <![CDATA[
+# Function to get the latest Notepad++ release download URL
+function Get-LatestNotepadPlusPlusReleaseUrl {
+    $apiUrl = "https://api.github.com/repos/notepad-plus-plus/notepad-plus-plus/releases/latest"
+    $releaseInfo = Invoke-RestMethod -Uri $apiUrl -Headers @{ "User-Agent" = "PowerShell Script" }
+    $installerAsset = $releaseInfo.assets | Where-Object { $_.name -like "*Installer.x64.exe" }
+    return $installerAsset.browser_download_url
+}
+
+# Get the latest Notepad++ release URL
+$installerUrl = Get-LatestNotepadPlusPlusReleaseUrl
+
+# Define the path to the temporary directory
+$tempDir = [System.IO.Path]::GetTempPath()
+$installerPath = Join-Path -Path $tempDir -ChildPath "npp_installer.exe"
+
+# Download the Notepad++ installer to the temporary directory
+Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath
+
+# Run the installer with silent mode
+Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait
+
+# Unregister the Notepad++ context menu shell integration
+$contextMenuDllPath = "C:\Program Files\Notepad++\contextMenu\NppShell.dll"
+if (Test-Path $contextMenuDllPath) {
+    Start-Process -FilePath "regsvr32.exe" -ArgumentList "/u", "/s", "`"$contextMenuDllPath`"" -Wait -NoNewWindow
+}
+
+# Clean up by deleting the installer from the temporary directory
+Remove-Item -Path $installerPath -Force
+
+# Credits:https://github.com/DanysysTeam/PS-SFTA
+# Change File Associations
+
+powershell -ExecutionPolicy Bypass -command "& { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+ Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/DanysysTeam/PS-SFTA/master/SFTA.ps1'));
+  Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.txt'; Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.json';
+    Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.log'; Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.ini';
+      Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.xml' }"
+
+# Create a notepad++ entry to "New" context submenu
+# Define registry paths and keys
+$notepadPlusPlusPath = "C:\Program Files\Notepad++\notepad++.exe"
+$progID = "SFTA.notepad++.txt"
+$description = "Notepad++ Document"
+
+# Ensure ProgID entry for Notepad++ text file exists
+try {
+    if (-not (Test-Path -Path "HKLM:\Software\Classes\$progID")) {
+        New-Item -Path "HKLM:\Software\Classes\$progID" -Force | Out-Null
+        Set-ItemProperty -Path "HKLM:\Software\Classes\$progID" -Name "(Default)" -Value $description
+        New-Item -Path "HKLM:\Software\Classes\$progID\DefaultIcon" -Force | Out-Null
+        Set-ItemProperty -Path "HKLM:\Software\Classes\$progID\DefaultIcon" -Name "(Default)" -Value "`"$notepadPlusPlusPath`",0"
+        New-Item -Path "HKLM:\Software\Classes\$progID\shell\open\command" -Force | Out-Null
+        Set-ItemProperty -Path "HKLM:\Software\Classes\$progID\shell\open\command" -Name "(Default)" -Value "`"$notepadPlusPlusPath`" `"%1`""
+    }
+} catch {
+    Write-Host "Error ensuring ProgID entry: $_" -ForegroundColor Red
+}
+
+# Add entry to the "New" menu
+try {
+    New-Item -Path "HKLM:\Software\Classes\.txt" -Force | Out-Null
+    Set-ItemProperty -Path "HKLM:\Software\Classes\.txt" -Name "(Default)" -Value $progID
+
+    New-Item -Path "HKLM:\Software\Classes\.txt\ShellNew" -Force | Out-Null
+    Set-ItemProperty -Path "HKLM:\Software\Classes\.txt\ShellNew" -Name "NullFile" -Value ""
+} catch {
+    Write-Host "Error adding entry to the New menu: $_" -ForegroundColor Red
+}
+      ]]>
+    </File>
+    <File path="C:\Windows\Setup\Scripts\fonts.ps1">
+      <![CDATA[
+# Define the GitHub repository and API endpoint
+$repoOwner = "ryanoasis"
+$repoName = "nerd-fonts"
+$apiUrl = "https://api.github.com/repos/$repoOwner/$repoName/releases/latest"
+
+# Fetch the latest release information
+$releaseInfo = Invoke-RestMethod -Uri $apiUrl -Headers @{ "User-Agent" = "PowerShell" }
+
+# Extract the download URL for FiraCode.zip
+$asset = $releaseInfo.assets | Where-Object { $_.name -like "FiraCode.zip" }
+if ($asset -ne $null) {
+    $fontUrl = $asset.browser_download_url
+    Write-Host "Latest FiraCode Nerd Font URL: $fontUrl"
+} else {
+    Write-Host "FiraCode.zip not found in the latest release assets."
+    exit 1
+}
+
+# Define the local path to save the file
+$zipFilePath = "$env:USERPROFILE\Downloads\FiraCode.zip"
+
+# Define the path for the downloaded zip file and the extraction folder
+$tempFolderPath = "$env:TEMP\FiraCodeNerdFont"
+$zipFilePath = "$tempFolderPath\FiraCode.zip"
+
+# Create the temporary folder if it doesn't exist
+if (-Not (Test-Path -Path $tempFolderPath)) {
+    New-Item -ItemType Directory -Path $tempFolderPath | Out-Null
+}
+
+# Download the font
+Write-Host "Downloading FiraCode Nerd Font..."
+Invoke-WebRequest -Uri $fontUrl -OutFile $zipFilePath
+
+# Extract the zip file
+Expand-Archive -Path $zipFilePath -DestinationPath $tempFolderPath
+
+# Define the font installation path
+$fontInstallPath = "$env:WINDIR\Fonts"
+
+# Install the fonts
+Get-ChildItem -Path $tempFolderPath -Filter *.ttf | ForEach-Object {
+    Copy-Item -Path $_.FullName -Destination $fontInstallPath
+    # Add the font to the registry
+    $fontName = $_.Name
+    $fontRegKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"
+    New-ItemProperty -Path $fontRegKey -Name $fontName -PropertyType String -Value $fontName | Out-Null
+}
+
+# Remove the temporary folder and zip file
+Remove-Item -Path $tempFolderPath -Recurse -Force
+      ]]>
+    </File>
+  </Extensions>
+</unattend>
