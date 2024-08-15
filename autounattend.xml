@@ -11,9 +11,6 @@
 				<UILanguage>en-US</UILanguage>
 			</SetupUILanguage>
 			<InputLocale>0409:00000409;0809:00000408</InputLocale>
-			<SystemLocale>en-US</SystemLocale>
-			<UILanguage>en-US</UILanguage>
-			<UserLocale>en-US</UserLocale>
 		</component>
     <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <UserData>
@@ -99,7 +96,7 @@
         <RunSynchronousCommand wcm:action="add">
           <Order>8</Order>
           <Description>Registry Entry to Execute the HKCU Registry Entry Script the First Time a New User Logs In</Description>
-          <Path>reg.exe add "HKU\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Runonce" /v "pwshscript" /t REG_SZ /d "powershell.exe -WindowStyle Hidden -File C:\Windows\Setup\Scripts\powershell.ps1"</Path>
+          <Path>reg.exe add "HKU\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Runonce" /v "pwshscript" /t REG_SZ /d "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\powershell.ps1"</Path>
         </RunSynchronousCommand>
         <RunSynchronousCommand wcm:action="add">
           <Order>9</Order>
@@ -132,34 +129,8 @@
   <settings pass="auditSystem"></settings>
   <settings pass="auditUser"></settings>
   <settings pass="oobeSystem">
-    <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-			<InputLocale>0409:00000409;0809:00000408</InputLocale>
-			<SystemLocale>en-US</SystemLocale>
-			<UILanguage>en-US</UILanguage>
-			<UserLocale>en-US</UserLocale>
-		</component>
+    <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS"></component>
     <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-      <UserAccounts>
-				<LocalAccounts>
-					<LocalAccount wcm:action="add">
-						<Name>Admin</Name>
-						<Group>Administrators</Group>
-						<Password>
-							<Value></Value>
-							<PlainText>true</PlainText>
-						</Password>
-					</LocalAccount>
-				</LocalAccounts>
-			</UserAccounts>
-			<AutoLogon>
-				<Username>Admin</Username>
-				<Enabled>true</Enabled>
-				<LogonCount>1</LogonCount>
-				<Password>
-					<Value></Value>
-					<PlainText>true</PlainText>
-				</Password>
-			</AutoLogon>
       <OOBE>
         <HideEULAPage>true</HideEULAPage>
         <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
@@ -2030,25 +2001,6 @@ $_Press_Enter
 # This script runs on first logon due to usage of winget that
 # needs user accounts to be created to function
 
-<#
-# Launches Windows Terminal and waits for a second
-# Stops all running instances of Windows Terminal
-# Combine terminal operations into a single script block
-Start-Job -ScriptBlock {
-    # Get the path to wt.exe using the LOCALAPPDATA environment variable
-    Start-Process "shell:AppsFolder\Microsoft.WindowsTerminal_8wekyb3d8bbwe!App"
-    # $wtPath = Join-Path -Path $env:LOCALAPPDATA -ChildPath "Microsoft\WindowsApps\wt.exe"
-    # Launch Windows Terminal using the dynamic path
-    # Start-Process $wtPath
-
-    # Wait for a second
-    Start-Sleep -Seconds 1
-
-    # Stop all running instances of Windows Terminal
-    Get-Process "WindowsTerminal" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-}
-#>
-
 Add-Type -AssemblyName System.Windows.Forms
 
 # Function to show a non-blocking message box that stays on top
@@ -2077,7 +2029,7 @@ function Is-ExplorerRunning {
 # Loop until explorer.exe is no longer running
 while ($true) {
       if (Is-ExplorerRunning) {
-          # Launches Windows Terminal and waits for a second
+          # Launches Windows Terminal and waits for a second (Its needed for terminal's json config creation)
           # Stops all running instances of Windows Terminal
           Start-Process "shell:AppsFolder\Microsoft.WindowsTerminal_8wekyb3d8bbwe!App"
           # Wait for a second
@@ -2601,7 +2553,37 @@ if (-not (Test-Path $registryPath)) {
 Set-ItemProperty -Path $registryPath -Name "DelegationConsole" -Value "{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}"
 Set-ItemProperty -Path $registryPath -Name "DelegationTerminal" -Value "{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}"
 
+# Accept SDelete EULA
+New-Item -Path "HKCU:\Software\Sysinternals\SDelete" -Force | Out-Null; Set-ItemProperty -Path "HKCU:\Software\Sysinternals\SDelete" -Name "EulaAccepted" -Value 1
+
+# Get the current username
+$username = $env:USERNAME
+
+# Define the paths to the files
+$filePath64 = "C:\Windows\SysWoW64\sdelete64.exe"
+$filePath32 = "C:\Windows\System32\sdelete.exe"
+
+# Function to grant full control permissions
+function Grant-FullControl {
+    param (
+        [string]$filePath,
+        [string]$user
+    )
+# Takeover ownership specifically to the file
+# takeown /F $filePath
+
+# Grant permissions specifically to the file
+icacls $filePath /grant "${user}`:(F)"
+}
+
+# Grant full control permissions to the files
+Grant-FullControl -filePath $filePath64 -user $username
+Grant-FullControl -filePath $filePath32 -user $username
+
 Start-Process "cmd.exe" -ArgumentList "/c C:\Windows\Setup\Scripts\currentuser.cmd" -NoNewWindow -Wait
+
+# Set EnableLUA to 1 (enable UAC)
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value 1
 
 shutdown.exe /r /t 5
 ]]>
