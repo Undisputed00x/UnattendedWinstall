@@ -15,7 +15,7 @@
     <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <UserData>
         <ProductKey>
-          <Key>VK7JG-NPHTM-C97JM-9MPGT-3V66T</Key>
+          <Key>00000-00000-00000-00000-00000</Key>
           <!-- <WillShowUI>Always</WillShowUI> -->
         </ProductKey>
         <AcceptEula>true</AcceptEula>
@@ -168,9 +168,13 @@ foreach( $file in $Document.unattend.Extensions.File ) {
       <![CDATA[
   Get-AppxProvisionedPackage -Online |
   Where-Object -Property 'DisplayName' -In -Value @(
+  #'Microsoft.WindowsTerminal';
+  #'Microsoft.WindowsCalculator';
+  #'Microsoft.Paint';
+  #'Microsoft.MSPaint';
+  #'Microsoft.WindowsStore';
   'Microsoft.Microsoft3DViewer';
   'Microsoft.BingSearch';
-  #'Microsoft.WindowsCalculator';
   'Microsoft.WindowsCamera';
   'Clipchamp.Clipchamp';
   'Microsoft.WindowsAlarms';
@@ -187,8 +191,6 @@ foreach( $file in $Document.unattend.Extensions.File ) {
   'Microsoft.MicrosoftOfficeHub';
   'Microsoft.Office.OneNote';
   'Microsoft.OutlookForWindows';
-  #'Microsoft.Paint';
-  #'Microsoft.MSPaint';
   'Microsoft.People';
   'Microsoft.Windows.Photos';
   'Microsoft.PowerAutomateDesktop';
@@ -203,7 +205,6 @@ foreach( $file in $Document.unattend.Extensions.File ) {
   'Microsoft.WindowsSoundRecorder';
   'Microsoft.BingWeather';
   'Microsoft.ZuneMusic';
-  #'Microsoft.WindowsTerminal';
   'Microsoft.Xbox.TCUI';
   'Microsoft.XboxApp';
   'Microsoft.XboxGameOverlay';
@@ -224,18 +225,17 @@ foreach( $file in $Document.unattend.Extensions.File ) {
   'Microsoft.MixedReality.Portal';
   'Microsoft.Windows.Ai.Copilot.Provider';
   'Microsoft.WindowsMeetNow';
-  #'Microsoft.WindowsStore';
 ) | Remove-AppxProvisionedPackage -AllUsers -Online
 
 Get-WindowsCapability -Online |
 Where-Object -FilterScript {
   ($_.Name -split '~')[0] -in @(
+    #'Microsoft.Windows.MSPaint';
+    #'Microsoft.Windows.PowerShell.ISE';
     'Browser.InternetExplorer';
     'MathRecognizer';
     'Microsoft.Windows.Notepad';
     'OpenSSH.Client';
-    #'Microsoft.Windows.MSPaint';
-    #'Microsoft.Windows.PowerShell.ISE';
     'App.Support.QuickAssist';
     'App.StepsRecorder';
     'Media.WindowsMediaPlayer';
@@ -296,6 +296,45 @@ Where-Object -Property 'FeatureName' -In -Value @(
   $bytes[0x15] = $bytes[0x15] -bor 0x20
   [System.IO.File]::WriteAllBytes($shortcutPath, $bytes)
 
+  # Create windows-defender-remover shortcut on the desktop
+  # https://github.com/ionuttbara/windows-defender-remover
+  # Define the PowerShell script content
+  $scriptContent = "
+    `$outputDir = `"C:\Users\Default\Desktop\windows-defender-remover`"
+    `$repoUrl = `"https://github.com/ionuttbara/windows-defender-remover/archive/refs/heads/main.zip`"
+    `$zipFile = Join-Path `$outputDir `"repo.zip`"
+
+    if (-Not (Test-Path `$outputDir)) { New-Item -ItemType Directory -Path `$outputDir | Out-Null }
+
+    `$ProgressPreference = 'SilentlyContinue'
+    (New-Object System.Net.WebClient).DownloadFile(`$repoUrl, `$zipFile)
+
+    Expand-Archive -Path `$zipFile -DestinationPath `$outputDir
+    Remove-Item -Path `$zipFile
+
+    `$extractedDir = Join-Path `$outputDir `"windows-defender-remover-main`"
+    Set-Location `$extractedDir
+    Start-Process `".\Script_Run.bat`" -NoNewWindow -Wait
+  "
+
+  $tempScriptPath = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "WinDefender-Remover.ps1")
+      
+  # Create a powershell script on temp file
+  Set-Content -Path $tempScriptPath -Value $scriptContent -Force
+    
+  # Set properties of the shortcut
+  $shell3 = New-Object -ComObject WScript.Shell
+  $shortcutPath3 = Join-Path $desktopPath 'WinDefender-Remover.lnk'
+  $shortcut3 = $shell3.CreateShortcut($shortcutPath3)
+  $shortcut3.TargetPath = "powershell.exe"
+  $shortcut3.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$tempScriptPath`""
+  $shortcut3.WorkingDirectory = [System.IO.Path]::GetDirectoryName($tempScriptPath)
+  $shortcut3.Save()
+
+  # Set the shortcut to 'Run as administrator'
+  $bytes2 = [System.IO.File]::ReadAllBytes($shortcutPath3)
+  $bytes2[0x15] = $bytes2[0x15] -bor 0x20
+  [System.IO.File]::WriteAllBytes($shortcutPath3, $bytes2)
 
   # Enables .NET Framework 3.5
   DISM /Online /Enable-Feature /FeatureName:NetFx3 /All /Source:X:\sources\sxs /LimitAccess
@@ -727,7 +766,7 @@ Where-Object -Property 'FeatureName' -In -Value @(
   Set-Service -Name 'wudfsvc' -StartupType Manual -ErrorAction Continue
 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+ 
   # Clean empty tasks of TaskManager
   # Define the registry path
   $baseRegistryPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\Microsoft\Windows"
@@ -989,7 +1028,16 @@ reg.exe delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Exp
 reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer" /v DisableGraphRecentItems /t REG_DWORD /d 1 /f
 
 :: Disable Combine Taskbar buttons and hide labels
-reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoTaskGrouping /t REG_DWORD /d 1 /f]]>
+reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoTaskGrouping /t REG_DWORD /d 1 /f
+
+:: Disable SmartScreen in Windows and Edge
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" /v SmartScreenEnabled /t REG_SZ /d "Off" /f
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WTDS\Components" /v ServiceEnabled /t REG_DWORD /d 0 /f
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WTDS\Components" /v NotifyMalicious /t REG_DWORD /d 0 /f
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WTDS\Components" /v NotifyPasswordReuse /t REG_DWORD /d 0 /f
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WTDS\Components" /v NotifyUnsafeApp /t REG_DWORD /d 0 /f
+
+]]>
     </File>
     <!--Adds Items to Right-Click Context Menu-->
     <File path="C:\Windows\Setup\Scripts\contextmenu.reg">
@@ -2026,24 +2074,12 @@ function Is-ExplorerRunning {
     return $process -ne $null
 }
 
-# Loop until explorer.exe is no longer running
-while ($true) {
-      if (Is-ExplorerRunning) {
-          # Launches Windows Terminal and waits for a second (Its needed for terminal's json config creation)
-          # Stops all running instances of Windows Terminal
-          Start-Process "shell:AppsFolder\Microsoft.WindowsTerminal_8wekyb3d8bbwe!App"
-          # Wait for a second
-          Start-Sleep -Seconds 1
-          # Stop all running instances of Windows Terminal
-          Get-Process "WindowsTerminal" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-
-          # If explorer.exe is running, terminate it using taskkill
-          Start-Process -FilePath "cmd.exe" -ArgumentList "/c taskkill /f /im explorer.exe" -NoNewWindow -Wait
-          break
-      } else {
-          Write-Output "Explorer.exe is not running. Waiting..."
-          Start-Sleep -Seconds 1
-      }
+# Terminate explorer.exe if running
+while (Is-ExplorerRunning) {
+    Start-Process "shell:AppsFolder\Microsoft.WindowsTerminal_8wekyb3d8bbwe!App"
+    Start-Sleep -Seconds 1
+    Stop-Process -Name "WindowsTerminal" -ErrorAction SilentlyContinue -Force
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c taskkill /f /im explorer.exe" -NoNewWindow -Wait
 }
 
 # Call the function to display a message box
@@ -2055,530 +2091,226 @@ $ProgressPreference = 'SilentlyContinue'
 # Update winget (necessary for installation of the software below)
 powershell.exe -ExecutionPolicy Bypass -Command "& { &([ScriptBlock]::Create((irm winget.pro))) -Force }"
 
-# Install Powershell 7
-winget install --id Microsoft.Powershell --source winget --silent
+function Configure-PowershellAndCmd {
+    Start-Job -ScriptBlock {
+        # Install PowerShell 7 using winget
+        winget install --id Microsoft.Powershell --source winget --silent
 
-# Updates the Windows Terminal settings file with the provided JSON content
-$settingsPath = [System.IO.Path]::Combine($env:LOCALAPPDATA, 'Packages', 'Microsoft.WindowsTerminal_8wekyb3d8bbwe', 'LocalState', 'settings.json')
-$jsonContent = @"
-{
-    "$help": "https://aka.ms/terminal-documentation",
-    "$schema": "https://aka.ms/terminal-profiles-schema",
-    "actions":
-    [
-        {
-            "command":
-            {
-                "action": "copy",
-                "singleLine": false
-            },
-            "keys": "ctrl+c"
-        },
-        {
-            "command": "paste",
-            "keys": "ctrl+v"
-        },
-        {
-            "command": "find",
-            "keys": "ctrl+shift+f"
-        },
-        {
-            "command":
-            {
-                "action": "splitPane",
-                "split": "auto",
-                "splitMode": "duplicate"
-            },
-            "keys": "alt+shift+d"
+        # Define font settings for CMD console
+        $fontSettings = @{
+            "FaceName" = "FiraCode Nerd Font Mono"
+            "FontSize" = 1310720
+            "FontFamily" = 54
+            "FontWeight" = 440
+            "ColorTable00" = 0x000000
         }
-    ],
-    "copyFormatting": "none",
-    "copyOnSelect": false,
-    "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
-    "experimental.rendering.software": false,
-    "newTabMenu":
-    [
-        {
-            "type": "remainingProfiles"
+
+        # Define the registry path for CMD console settings
+        $regPath = "HKCU:\Console"
+
+        # Apply all font settings in one go
+        foreach ($setting in $fontSettings.GetEnumerator()) {
+            $type = if ($setting.Key -eq "FaceName") { "String" } else { "Dword" }
+            Set-ItemProperty -Path $regPath -Name $setting.Key -Value $setting.Value -Type $type
         }
-    ],
-    "profiles":
-    {
-        "defaults":
-        {
-            "colorScheme": "Campbell",
-            "elevate": true,
-            "experimental.retroTerminalEffect": false,
-            "font":
-            {
-                "face": "FiraCode Nerd Font Mono",
-                "size": 12.0,
-                "weight": "normal"
-            },
-            "opacity": 100,
-            "useAcrylic": true,
-            "useAtlasEngine": true
-        },
-        "list":
-        [
-            {
-                "font":
-                {
-                    "size": 12.0,
-                    "weight": "normal"
-                },
-                "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
-                "hidden": false,
-                "name": "PowerShell",
-                "source": "Windows.Terminal.PowershellCore"
-            },
-            {
-                "elevate": true,
-                "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
-                "hidden": false,
-                "name": "Command Prompt"
-            },
-            {
-                "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
-                "hidden": false,
-                "name": "Azure Cloud Shell",
-                "source": "Windows.Terminal.Azure"
-            },
-            {
-                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
-                "hidden": false,
-                "name": "Windows PowerShell"
+
+        # Define the registry path for removing Windows Terminal default suggestion
+        $startupRegistryPath = "HKCU:\Console\%%Startup"
+
+        # Check if the registry key exists; if not, create it
+        if (-not (Test-Path $startupRegistryPath)) {
+            New-Item -Path $startupRegistryPath -Force | Out-Null
+        }
+
+        # Set registry values to remove default suggestions
+        Set-ItemProperty -Path $startupRegistryPath -Name "DelegationConsole" -Value "{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}"
+        Set-ItemProperty -Path $startupRegistryPath -Name "DelegationTerminal" -Value "{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}"
+
+        # Update Terminal settings
+        # Define the path to the settings.json file
+        $settingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
+
+        # Load the existing settings.json
+        $json = Get-Content -Path $settingsPath -Raw | ConvertFrom-Json
+
+        # Ensure profiles and profiles.defaults exist
+        $json | ForEach-Object {
+            if (-not $_.profiles) { $_ | Add-Member -MemberType NoteProperty -Name profiles -Value @{} }
+            if (-not $_.profiles.defaults) { $_.profiles | Add-Member -MemberType NoteProperty -Name defaults -Value @{} }
+        }
+
+        # Modify or add the profiles.defaults properties
+        $json.profiles.defaults = @{
+            colorScheme = "CyberPunk2077"
+            elevate = $true
+            font = @{
+                face = "FiraCode Nerd Font Mono"
+                size = 12.0
+                weight = "normal"
             }
-        ]
-    },
-    "schemes":
-    [
-        {
-            "background": "#23262E",
-            "black": "#000000",
-            "blue": "#0321D7",
-            "brightBlack": "#000000",
-            "brightBlue": "#03D6B8",
-            "brightCyan": "#03D6B8",
-            "brightGreen": "#8FD46D",
-            "brightPurple": "#EE5D43",
-            "brightRed": "#F92672",
-            "brightWhite": "#C74DED",
-            "brightYellow": "#FFE66D",
-            "cursorColor": "#EE5D43",
-            "cyan": "#03D6B8",
-            "foreground": "#FFCA28",
-            "green": "#8FD46D",
-            "name": "Aurora",
-            "purple": "#EE5D43",
-            "red": "#F0266F",
-            "selectionBackground": "#292E38",
-            "white": "#C74DED",
-            "yellow": "#FFE66D"
-        },
-        {
-            "background": "#0C0C0C",
-            "black": "#0C0C0C",
-            "blue": "#0037DA",
-            "brightBlack": "#767676",
-            "brightBlue": "#3B78FF",
-            "brightCyan": "#61D6D6",
-            "brightGreen": "#16C60C",
-            "brightPurple": "#B4009E",
-            "brightRed": "#E74856",
-            "brightWhite": "#F2F2F2",
-            "brightYellow": "#F9F1A5",
-            "cursorColor": "#FFFFFF",
-            "cyan": "#3A96DD",
-            "foreground": "#CCCCCC",
-            "green": "#13A10E",
-            "name": "Campbell",
-            "purple": "#881798",
-            "red": "#C50F1F",
-            "selectionBackground": "#FFFFFF",
-            "white": "#CCCCCC",
-            "yellow": "#C19C00"
-        },
-        {
-            "background": "#012456",
-            "black": "#0C0C0C",
-            "blue": "#0037DA",
-            "brightBlack": "#767676",
-            "brightBlue": "#3B78FF",
-            "brightCyan": "#61D6D6",
-            "brightGreen": "#16C60C",
-            "brightPurple": "#B4009E",
-            "brightRed": "#E74856",
-            "brightWhite": "#F2F2F2",
-            "brightYellow": "#F9F1A5",
-            "cursorColor": "#FFFFFF",
-            "cyan": "#3A96DD",
-            "foreground": "#CCCCCC",
-            "green": "#13A10E",
-            "name": "Campbell Powershell",
-            "purple": "#881798",
-            "red": "#C50F1F",
-            "selectionBackground": "#FFFFFF",
-            "white": "#CCCCCC",
-            "yellow": "#C19C00"
-        },
-        {
-            "background": "#272932",
-            "black": "#272932",
-            "blue": "#9381FF",
-            "brightBlack": "#7B8097",
-            "brightBlue": "#37EBF3",
-            "brightCyan": "#37EBF3",
-            "brightGreen": "#40FFE9",
-            "brightPurple": "#CB1DCD",
-            "brightRed": "#C71515",
-            "brightWhite": "#C1DEFF",
-            "brightYellow": "#FFF955",
-            "cursorColor": "#FDF500",
-            "cyan": "#00D0DB",
-            "foreground": "#E455AE",
-            "green": "#1AC5B0",
-            "name": "CyberPunk2077",
-            "purple": "#742D8B",
-            "red": "#710000",
-            "selectionBackground": "#742D8B",
-            "white": "#D1C5C0",
-            "yellow": "#FDF500"
-        },
-        {
-            "background": "#282C34",
-            "black": "#282C34",
-            "blue": "#61AFEF",
-            "brightBlack": "#5A6374",
-            "brightBlue": "#61AFEF",
-            "brightCyan": "#56B6C2",
-            "brightGreen": "#98C379",
-            "brightPurple": "#C678DD",
-            "brightRed": "#E06C75",
-            "brightWhite": "#DCDFE4",
-            "brightYellow": "#E5C07B",
-            "cursorColor": "#FFFFFF",
-            "cyan": "#56B6C2",
-            "foreground": "#DCDFE4",
-            "green": "#98C379",
-            "name": "One Half Dark",
-            "purple": "#C678DD",
-            "red": "#E06C75",
-            "selectionBackground": "#FFFFFF",
-            "white": "#DCDFE4",
-            "yellow": "#E5C07B"
-        },
-        {
-            "background": "#FAFAFA",
-            "black": "#383A42",
-            "blue": "#0184BC",
-            "brightBlack": "#4F525D",
-            "brightBlue": "#61AFEF",
-            "brightCyan": "#56B5C1",
-            "brightGreen": "#98C379",
-            "brightPurple": "#C577DD",
-            "brightRed": "#DF6C75",
-            "brightWhite": "#FFFFFF",
-            "brightYellow": "#E4C07A",
-            "cursorColor": "#4F525D",
-            "cyan": "#0997B3",
-            "foreground": "#383A42",
-            "green": "#50A14F",
-            "name": "One Half Light",
-            "purple": "#A626A4",
-            "red": "#E45649",
-            "selectionBackground": "#4F525D",
-            "white": "#FAFAFA",
-            "yellow": "#C18301"
-        },
-        {
-            "background": "#002B36",
-            "black": "#002B36",
-            "blue": "#268BD2",
-            "brightBlack": "#073642",
-            "brightBlue": "#839496",
-            "brightCyan": "#93A1A1",
-            "brightGreen": "#586E75",
-            "brightPurple": "#6C71C4",
-            "brightRed": "#CB4B16",
-            "brightWhite": "#FDF6E3",
-            "brightYellow": "#657B83",
-            "cursorColor": "#FFFFFF",
-            "cyan": "#2AA198",
-            "foreground": "#839496",
-            "green": "#859900",
-            "name": "Solarized Dark",
-            "purple": "#D33682",
-            "red": "#DC322F",
-            "selectionBackground": "#FFFFFF",
-            "white": "#EEE8D5",
-            "yellow": "#B58900"
-        },
-        {
-            "background": "#FDF6E3",
-            "black": "#002B36",
-            "blue": "#268BD2",
-            "brightBlack": "#073642",
-            "brightBlue": "#839496",
-            "brightCyan": "#93A1A1",
-            "brightGreen": "#586E75",
-            "brightPurple": "#6C71C4",
-            "brightRed": "#CB4B16",
-            "brightWhite": "#FDF6E3",
-            "brightYellow": "#657B83",
-            "cursorColor": "#002B36",
-            "cyan": "#2AA198",
-            "foreground": "#657B83",
-            "green": "#859900",
-            "name": "Solarized Light",
-            "purple": "#D33682",
-            "red": "#DC322F",
-            "selectionBackground": "#073642",
-            "white": "#EEE8D5",
-            "yellow": "#B58900"
-        },
-        {
-            "background": "#000000",
-            "black": "#000000",
-            "blue": "#3465A4",
-            "brightBlack": "#555753",
-            "brightBlue": "#729FCF",
-            "brightCyan": "#34E2E2",
-            "brightGreen": "#8AE234",
-            "brightPurple": "#AD7FA8",
-            "brightRed": "#EF2929",
-            "brightWhite": "#EEEEEC",
-            "brightYellow": "#FCE94F",
-            "cursorColor": "#FFFFFF",
-            "cyan": "#06989A",
-            "foreground": "#D3D7CF",
-            "green": "#4E9A06",
-            "name": "Tango Dark",
-            "purple": "#75507B",
-            "red": "#CC0000",
-            "selectionBackground": "#FFFFFF",
-            "white": "#D3D7CF",
-            "yellow": "#C4A000"
-        },
-        {
-            "background": "#FFFFFF",
-            "black": "#000000",
-            "blue": "#3465A4",
-            "brightBlack": "#555753",
-            "brightBlue": "#729FCF",
-            "brightCyan": "#34E2E2",
-            "brightGreen": "#8AE234",
-            "brightPurple": "#AD7FA8",
-            "brightRed": "#EF2929",
-            "brightWhite": "#EEEEEC",
-            "brightYellow": "#FCE94F",
-            "cursorColor": "#000000",
-            "cyan": "#06989A",
-            "foreground": "#555753",
-            "green": "#4E9A06",
-            "name": "Tango Light",
-            "purple": "#75507B",
-            "red": "#CC0000",
-            "selectionBackground": "#555753",
-            "white": "#D3D7CF",
-            "yellow": "#C4A000"
-        },
-        {
-            "background": "#300A24",
-            "black": "#171421",
-            "blue": "#0037DA",
-            "brightBlack": "#767676",
-            "brightBlue": "#08458F",
-            "brightCyan": "#2C9FB3",
-            "brightGreen": "#26A269",
-            "brightPurple": "#A347BA",
-            "brightRed": "#C01C28",
-            "brightWhite": "#F2F2F2",
-            "brightYellow": "#A2734C",
-            "cursorColor": "#FFFFFF",
-            "cyan": "#3A96DD",
-            "foreground": "#FFFFFF",
-            "green": "#26A269",
-            "name": "Ubuntu-22.04-ColorScheme",
-            "purple": "#881798",
-            "red": "#C21A23",
-            "selectionBackground": "#FFFFFF",
-            "white": "#CCCCCC",
-            "yellow": "#A2734C"
-        },
-        {
-            "background": "#300A24",
-            "black": "#171421",
-            "blue": "#0037DA",
-            "brightBlack": "#767676",
-            "brightBlue": "#08458F",
-            "brightCyan": "#2C9FB3",
-            "brightGreen": "#26A269",
-            "brightPurple": "#A347BA",
-            "brightRed": "#C01C28",
-            "brightWhite": "#F2F2F2",
-            "brightYellow": "#A2734C",
-            "cursorColor": "#FFFFFF",
-            "cyan": "#3A96DD",
-            "foreground": "#FFFFFF",
-            "green": "#26A269",
-            "name": "Ubuntu-24.04-ColorScheme",
-            "purple": "#881798",
-            "red": "#C21A23",
-            "selectionBackground": "#FFFFFF",
-            "white": "#CCCCCC",
-            "yellow": "#A2734C"
-        },
-        {
-            "background": "#300A24",
-            "black": "#171421",
-            "blue": "#0037DA",
-            "brightBlack": "#767676",
-            "brightBlue": "#08458F",
-            "brightCyan": "#2C9FB3",
-            "brightGreen": "#26A269",
-            "brightPurple": "#A347BA",
-            "brightRed": "#C01C28",
-            "brightWhite": "#F2F2F2",
-            "brightYellow": "#A2734C",
-            "cursorColor": "#FFFFFF",
-            "cyan": "#3A96DD",
-            "foreground": "#FFFFFF",
-            "green": "#26A269",
-            "name": "Ubuntu-ColorScheme",
-            "purple": "#881798",
-            "red": "#C21A23",
-            "selectionBackground": "#FFFFFF",
-            "white": "#CCCCCC",
-            "yellow": "#A2734C"
-        },
-        {
-            "background": "#000000",
-            "black": "#000000",
-            "blue": "#000080",
-            "brightBlack": "#808080",
-            "brightBlue": "#0000FF",
-            "brightCyan": "#00FFFF",
-            "brightGreen": "#00FF00",
-            "brightPurple": "#FF00FF",
-            "brightRed": "#FF0000",
-            "brightWhite": "#FFFFFF",
-            "brightYellow": "#FFFF00",
-            "cursorColor": "#FFFFFF",
-            "cyan": "#008080",
-            "foreground": "#C0C0C0",
-            "green": "#008000",
-            "name": "Vintage",
-            "purple": "#800080",
-            "red": "#800000",
-            "selectionBackground": "#FFFFFF",
-            "white": "#C0C0C0",
-            "yellow": "#808000"
+            opacity = 100
+            useAcrylic = $true
+            useAtlasEngine = $true
         }
-    ],
-    "startOnUserLogin": false,
-    "themes": [],
-    "useAcrylicInTabRow": true,
-    "windowingBehavior": "useNew"
+
+        # Add the CyberPunk2077 color scheme if it doesn't exist
+        if (-not ($json.schemes | Where-Object { $_.name -eq "CyberPunk2077" })) {
+            $json.schemes += @{
+                name = "CyberPunk2077"
+                background = "#272932"
+                black = "#272932"
+                blue = "#9381FF"
+                brightBlack = "#7B8097"
+                brightBlue = "#37EBF3"
+                brightCyan = "#37EBF3"
+                brightGreen = "#40FFE9"
+                brightPurple = "#CB1DCD"
+                brightRed = "#C71515"
+                brightWhite = "#C1DEFF"
+                brightYellow = "#FFF955"
+                cursorColor = "#FDF500"
+                cyan = "#00D0DB"
+                foreground = "#E455AE"
+                green = "#1AC5B0"
+                purple = "#742D8B"
+                red = "#710000"
+                selectionBackground = "#742D8B"
+                white = "#D1C5C0"
+                yellow = "#FDF500"
+            }
+        }
+
+        # Add or update root properties
+        $json | Add-Member -MemberType NoteProperty -Name useAcrylicInTabRow -Value $true -Force
+        $json | Add-Member -MemberType NoteProperty -Name windowingBehavior -Value "useNew" -Force
+
+        # Add the defaultProfile key directly after the actions array
+        $json.defaultProfile = "{574e775e-4f2a-5b96-ac1e-a2962a402336}"
+
+        # Convert the modified JSON back to a string
+        $jsonString = $json | ConvertTo-Json -Depth 10 -Compress
+
+        # Save the updated JSON back to settings.json
+        $jsonString | Set-Content -Path $settingsPath -Force
+    }
 }
+
+function Install-OhMyPoshAndConfigureProfile {
+    Start-Job -ScriptBlock {
+        # Install oh-my-posh using winget
+        winget install JanDeDobbeleer.OhMyPosh -s winget
+
+        # Define the Oh My Posh theme path and theme files
+        $themePath = "$env:LOCALAPPDATA\Programs\oh-my-posh\themes"
+        $pwsh7Theme = "jblab_2021.omp.json"
+        $windowsTheme = "plague.omp.json"
+
+        # Define paths to profile files
+        $pwsh7ProfilePath = "$HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
+        $windowsProfilePath = "$HOME\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
+
+        # Ensure profile files exist
+        @($pwsh7ProfilePath, $windowsProfilePath) | ForEach-Object {
+            if (-not (Test-Path -Path $_)) {
+                New-Item -ItemType File -Path $_ -Force
+            }
+        }
+
+        # Define and add the Oh My Posh commands
+        $pwsh7OhMyPoshCommand = "`noh-my-posh init pwsh --config `"$themePath\$pwsh7Theme`" | Invoke-Expression"
+        $windowsOhMyPoshCommand = "`noh-my-posh init pwsh --config `"$themePath\$windowsTheme`" | Invoke-Expression"
+
+        Add-Content -Path $pwsh7ProfilePath -Value $pwsh7OhMyPoshCommand
+        Add-Content -Path $windowsProfilePath -Value $windowsOhMyPoshCommand
+    }
+}
+
+function Install-ClinkAndConfigureOhMyPosh {
+   Start-Job -ScriptBlock {
+        # Install Clink using winget
+        winget install Clink -s winget
+
+        # Define paths
+        $clinkPath = "$env:LOCALAPPDATA\clink"
+        $clinkLuaPath = "$clinkPath\oh-my-posh.lua"
+
+        # Create the .lua file for Clink
+        if (-not (Test-Path -Path $clinkPath)) {
+            New-Item -ItemType Directory -Path $clinkPath -Force
+        }
+
+        $clinkLuaContent = @"
+          load(io.popen('oh-my-posh init cmd --config "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/mojada.omp.json"'):read("*a"))()
 "@
 
-$jsonContent | Out-File -FilePath $settingsPath -Encoding utf8 -Force
-
-# Install oh-my-posh using winget
-winget install JanDeDobbeleer.OhMyPosh -s winget
-
-# Create oh-my-posh profile
-$themePath = "$env:LOCALAPPDATA\Programs\oh-my-posh\themes"
-
-# Manually construct the PowerShell 7 profile path
-$pwsh7ProfilePath = [System.IO.Path]::Combine($env:USERPROFILE, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
-
-# Create the PowerShell 7 profile file if it doesn't exist
-if (-not (Test-Path -Path $pwsh7ProfilePath)) {
-    New-Item -ItemType File -Path $pwsh7ProfilePath -Force
-}
-# Create oh-my-posh theme script
-Add-Content -Path $pwsh7ProfilePath -Value "`noh-my-posh init pwsh --config $themePath\jblab_2021.omp.json | Invoke-Expression"
-
-# Install Clink using winget
-winget install Clink -s winget
-
-# Define paths
-$clinkPath = "$env:LOCALAPPDATA\clink"
-$clinkLuaPath = "$clinkPath\oh-my-posh.lua"
-
-# Create the .lua file for Clink
-if (-not (Test-Path -Path $clinkPath)) {
-    New-Item -ItemType Directory -Path $clinkPath -Force
+        Set-Content -Path $clinkLuaPath -Value $clinkLuaContent -Force
+    }
 }
 
-$clinkLuaContent = @"
-load(io.popen('oh-my-posh init cmd --config "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/mojada.omp.json'):read("*a"))()
-"@
-Set-Content -Path $clinkLuaPath -Value $clinkLuaContent -Force
+function Set-SDeleteConfig {
+    Start-Job -ScriptBlock {
+        # Accept SDelete EULA
+        New-Item -Path "HKCU:\Software\Sysinternals\SDelete" -Force | Out-Null
+        Set-ItemProperty -Path "HKCU:\Software\Sysinternals\SDelete" -Name "EulaAccepted" -Value 1
 
-# Change fonts, fontsize, fontfamily and fontweight for command prompt
-$fontName = "FiraCode Nerd Font Mono"
-$fontSize = 1310720
-$fontFamily = 54
-$fontWeight = 440
+        # Get the current username and domain
+        $username = "$env:USERDOMAIN\$env:USERNAME"
 
-# Set the font name in the registry
-$regPath = "HKCU:\Console"
-$regName = "FaceName"
-Set-ItemProperty -Path $regPath -Name $regName -Value $fontName
+        # Define the paths to the files
+        $filePaths = @("C:\Windows\SysWoW64\sdelete64.exe", "C:\Windows\System32\sdelete.exe")
 
-# Set font size
-Set-ItemProperty -Path $regPath -Name "FontSize" -Value $fontSize -Type Dword
-# Set font Family (necessary for correct font rendering)
-Set-ItemProperty -Path $regPath -Name "FontFamily" -Value $fontFamily -Type Dword
-# Set font Weight (necessary for correct font rendering)
-Set-ItemProperty -Path $regPath -Name "FontWeight" -Value $fontWeight -Type Dword
+        # Function to grant full control permissions
+        function Grant-FullControl {
+            param (
+                [string]$filePath,
+                [string]$user
+            )
+            # Get the current ACL for the file
+            $acl = Get-Acl $filePath
 
-# Define the name and color value of Console black background
-$valueName = "ColorTable00"
-$colorValue = 0x000000
-# Set pure Black background
-Set-ItemProperty -Path $regPath -Name $valueName -Value $colorValue
+            # Create a new file system access rule for the specified user
+            $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($user, "FullControl", "Allow")
 
-# Remove Windows Terminal default suggestion
-# Define the registry path
-$registryPath = "HKCU:\Console\%%Startup"
+            # Add the access rule to the ACL
+            $acl.AddAccessRule($accessRule)
 
-# Check if the registry key exists; if not, create it
-if (-not (Test-Path $registryPath)) {
-    New-Item -Path "HKCU:\Console" -Name "%%Startup" -Force | Out-Null
-}
-Set-ItemProperty -Path $registryPath -Name "DelegationConsole" -Value "{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}"
-Set-ItemProperty -Path $registryPath -Name "DelegationTerminal" -Value "{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}"
+            # Set the updated ACL back to the file
+            Set-Acl $filePath $acl
+        }
 
-# Accept SDelete EULA
-New-Item -Path "HKCU:\Software\Sysinternals\SDelete" -Force | Out-Null; Set-ItemProperty -Path "HKCU:\Software\Sysinternals\SDelete" -Name "EulaAccepted" -Value 1
-
-# Get the current username
-$username = $env:USERNAME
-
-# Define the paths to the files
-$filePath64 = "C:\Windows\SysWoW64\sdelete64.exe"
-$filePath32 = "C:\Windows\System32\sdelete.exe"
-
-# Function to grant full control permissions
-function Grant-FullControl {
-    param (
-        [string]$filePath,
-        [string]$user
-    )
-# Takeover ownership specifically to the file
-# takeown /F $filePath
-
-# Grant permissions specifically to the file
-icacls $filePath /grant "${user}`:(F)"
+        # Apply full control permissions for the current user to both files
+        foreach ($filePath in $filePaths) {
+            Grant-FullControl -filePath $filePath -user $username
+        }
+    }
 }
 
-# Grant full control permissions to the files
-Grant-FullControl -filePath $filePath64 -user $username
-Grant-FullControl -filePath $filePath32 -user $username
+# Credits:https://github.com/DanysysTeam/PS-SFTA
+# Change File Associations
+function Register-FileTypesWithNotepadPlusPlus {
+    Start-Job -ScriptBlock {
+        powershell.exe -ExecutionPolicy Bypass -command "& {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+            Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/DanysysTeam/PS-SFTA/master/SFTA.ps1'));
+            Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.txt';
+            Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.json';
+            Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.log';
+            Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.ini';
+            Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.xml'
+        }"
+    }
+}
+
+# Start the functions asynchronously
+$jobs = @()
+$jobs += Configure-PowershellAndCmd
+$jobs += Install-OhMyPoshAndConfigureProfile
+$jobs += Install-ClinkAndConfigureOhMyPosh
+$jobs += Set-SDeleteConfig
+$jobs += Register-FileTypesWithNotepadPlusPlus
+
+# Wait for all jobs to complete
+$jobs | Wait-Job
 
 Start-Process "cmd.exe" -ArgumentList "/c C:\Windows\Setup\Scripts\currentuser.cmd" -NoNewWindow -Wait
 
@@ -2591,55 +2323,29 @@ shutdown.exe /r /t 5
     <File path="C:\Windows\Setup\Scripts\securedelete.ps1">
       <![CDATA[
 # Download Sysinternals Secure Delete tool
-# Define the URL for the Sysinternals Secure Delete tool
+# Define URLs and paths
 $url = "https://download.sysinternals.com/files/SDelete.zip"
-# Define the local path where the zip file will be downloaded
 $zipPath = "$env:TEMP\SDelete.zip"
-# Define the path where the zip file will be extracted
 $extractPath = "$env:TEMP\SDelete"
-# Define the path to the SysWOW64 directory for the 64-bit executable
-$destinationPath64 = "$env:SystemRoot\SysWOW64\sdelete64.exe"
-# Define the path to the System32 directory for the 32-bit executable
-$destinationPath32 = "$env:SystemRoot\System32\sdelete.exe"
+$destPath64 = "$env:SystemRoot\SysWOW64\sdelete64.exe"
+$destPath32 = "$env:SystemRoot\System32\sdelete.exe"
+$secureDeletePath = "$env:SystemRoot\SysWOW64\securedelete.ps1"
 
-# Download the zip file
-Invoke-WebRequest -Uri $url -OutFile $zipPath
-
-# Extract the zip file
+# Download and extract Sysinternals Secure Delete tool
+$ProgressPreference = 'SilentlyContinue'
+(New-Object System.Net.WebClient).DownloadFile($url, $zipPath)
 Expand-Archive -Path $zipPath -DestinationPath $extractPath
-
-# Move the 64-bit sdelete to the SysWOW64 directory
-Move-Item -Path "$extractPath\sdelete64.exe" -Destination $destinationPath64 -Force
-
-# Move the 32-bit sdelete to the System32 directory
-Move-Item -Path "$extractPath\sdelete.exe" -Destination $destinationPath32 -Force
-
-# Clean up: remove the downloaded zip file and extracted contents
+Move-Item -Path "$extractPath\sdelete64.exe" -Destination $destPath64 -Force
+Move-Item -Path "$extractPath\sdelete.exe" -Destination $destPath32 -Force
 Remove-Item -Path $zipPath -Force
 Remove-Item -Path $extractPath -Recurse -Force
 
-# Create SecureDelete.bat on "%SystemRoot%\SysWOW64"
-# Script that uses SecureDelete on the selected file/dir from context menu
-# Ensure the script is running as administrator
-If (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
-{
-    Write-Error "This script needs to be run as administrator."
-    Pause
-    Exit
-}
-
-# Define the path for the new PowerShell script
-$secureDeletePath = Join-Path $env:SystemRoot "SysWOW64\securedelete.ps1"
-
-# Create the new PowerShell script with the provided content
+# Create PowerShell script for secure deletion
 $psContent = @"
-# PowerShell script for secure deletion
-
 param (
-    [string[]] `$Items
+    [string[]]`$Items
 )
 
-# Check if any arguments were passed and perform the secure delete operation
 If (`$Items.Length -eq 0) {
     # No arguments passed, set the default path to $Recycle.Bin
     `$Items = @('C:\`$Recycle.Bin\*')
@@ -2648,118 +2354,79 @@ If (`$Items.Length -eq 0) {
     `$message = "Permanently deleting: `$Items``n``nAre you sure you want to continue?"
 }
 
-# Function to show a confirmation dialog
 function Show-ConfirmationDialog {
     param (
-        [string] `$Message
+        [string]`$Message
     )
     Add-Type -AssemblyName System.Windows.Forms
-    `$result = [System.Windows.Forms.MessageBox]::Show(`$Message, 'Confirm Secure Delete', [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Exclamation)
-    return (`$result -eq [System.Windows.Forms.DialogResult]::Yes)
+    [System.Windows.Forms.MessageBox]::Show(`$Message, 'Confirm Secure Delete', [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Exclamation) -eq [System.Windows.Forms.DialogResult]::Yes
 }
 
-# Check if sdelete.exe exists
 `$sdeletePath64 = Join-Path `$env:SystemRoot "SysWOW64\sdelete64.exe"
 `$sdeletePath32 = Join-Path `$env:SystemRoot "System32\sdelete.exe"
 
-if (Test-Path `$sdeletePath64) {
-    `$sdelete = `$sdeletePath64
-} elseif (Test-Path `$sdeletePath32) {
-    `$sdelete = `$sdeletePath32
-} else {
-    Write-Error "sdelete not found."
-    Exit 1
-}
+`$sdelete = if (Test-Path `$sdeletePath64) { `$sdeletePath64 } elseif (Test-Path `$sdeletePath32) { `$sdeletePath32 } else { Write-Error "sdelete not found."; Exit 1 }
 
-# Confirm action
-if (-not (Show-ConfirmationDialog -Message `$message)) {
-    Write-Host "Operation cancelled."
-    Exit 1
-}
+if (-not (Show-ConfirmationDialog -Message `$message)) { Write-Host "Operation cancelled."; Exit 1 }
 
-# Perform the secure delete operation
 foreach (`$item in `$Items) {
     Write-Host "Securely deleting: `$item"
     & `$sdelete -p 1 -s -r -q `$item
 }
-
 Write-Host "Secure delete completed."
 "@
-
-Write-Output "Creating securedelete.ps1 at $secureDeletePath"
 $psContent | Out-File -FilePath $secureDeletePath -Force -Encoding UTF8
       ]]>
     </File>
     <File path="C:\Windows\Setup\Scripts\notepad++.ps1">
       <![CDATA[
 # Function to get the latest Notepad++ release download URL
-function Get-LatestNotepadPlusPlusReleaseUrl {
+function Get-LatestNppReleaseUrl {
     $apiUrl = "https://api.github.com/repos/notepad-plus-plus/notepad-plus-plus/releases/latest"
-    $releaseInfo = Invoke-RestMethod -Uri $apiUrl -Headers @{ "User-Agent" = "PowerShell Script" }
-    $installerAsset = $releaseInfo.assets | Where-Object { $_.name -like "*Installer.x64.exe" }
-    return $installerAsset.browser_download_url
+    (Invoke-RestMethod -Uri $apiUrl -Headers @{ "User-Agent" = "PowerShell Script" }).assets |
+        Where-Object { $_.name -like "*Installer.x64.exe" } | Select-Object -ExpandProperty browser_download_url
 }
 
-# Get the latest Notepad++ release URL
-$installerUrl = Get-LatestNotepadPlusPlusReleaseUrl
-
-# Define the path to the temporary directory
+# Get the latest Notepad++ release URL and download the installer
+$installerUrl = Get-LatestNppReleaseUrl
 $tempDir = [System.IO.Path]::GetTempPath()
-$installerPath = Join-Path -Path $tempDir -ChildPath "npp_installer.exe"
+$installerPath = Join-Path $tempDir "npp_installer.exe"
+$ProgressPreference = 'SilentlyContinue'
+(New-Object System.Net.WebClient).DownloadFile($installerUrl, $installerPath)
 
-# Download the Notepad++ installer to the temporary directory
-Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath
-
-# Run the installer with silent mode
-Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait
-
-# Unregister the Notepad++ context menu shell integration
-$contextMenuDllPath = "C:\Program Files\Notepad++\contextMenu\NppShell.dll"
-if (Test-Path $contextMenuDllPath) {
-    Start-Process -FilePath "regsvr32.exe" -ArgumentList "/u", "/s", "`"$contextMenuDllPath`"" -Wait -NoNewWindow
+# Run the installer silently and unregister context menu integration
+Start-Process $installerPath -ArgumentList "/S" -Wait
+$contextMenuDll = "C:\Program Files\Notepad++\contextMenu\NppShell.dll"
+if (Test-Path $contextMenuDll) {
+    Start-Process "regsvr32.exe" -ArgumentList "/u", "/s", "`"$contextMenuDll`"" -Wait -NoNewWindow
 }
 
-# Clean up by deleting the installer from the temporary directory
-Remove-Item -Path $installerPath -Force
+# Clean up installer
+Remove-Item $installerPath -Force
 
-# Credits:https://github.com/DanysysTeam/PS-SFTA
-# Change File Associations
-
-powershell -ExecutionPolicy Bypass -command "& { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
- Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/DanysysTeam/PS-SFTA/master/SFTA.ps1'));
-  Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.txt'; Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.json';
-    Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.log'; Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.ini';
-      Register-FTA 'C:\Program Files\Notepad++\notepad++.exe' '.xml' }"
-
-# Create a notepad++ entry to "New" context submenu
-# Define registry paths and keys
-$notepadPlusPlusPath = "C:\Program Files\Notepad++\notepad++.exe"
+# Add Notepad++ to "New" context submenu
 $progID = "SFTA.notepad++.txt"
-$description = "Notepad++ Document"
+$notepadPath = "C:\Program Files\Notepad++\notepad++.exe"
+$regBase = "HKLM:\Software\Classes"
+$iconPath = "`"$notepadPath`",0"
+$cmdPath = "`"$notepadPath`" `"%1`""
 
-# Ensure ProgID entry for Notepad++ text file exists
 try {
-    if (-not (Test-Path -Path "HKLM:\Software\Classes\$progID")) {
-        New-Item -Path "HKLM:\Software\Classes\$progID" -Force | Out-Null
-        Set-ItemProperty -Path "HKLM:\Software\Classes\$progID" -Name "(Default)" -Value $description
-        New-Item -Path "HKLM:\Software\Classes\$progID\DefaultIcon" -Force | Out-Null
-        Set-ItemProperty -Path "HKLM:\Software\Classes\$progID\DefaultIcon" -Name "(Default)" -Value "`"$notepadPlusPlusPath`",0"
-        New-Item -Path "HKLM:\Software\Classes\$progID\shell\open\command" -Force | Out-Null
-        Set-ItemProperty -Path "HKLM:\Software\Classes\$progID\shell\open\command" -Name "(Default)" -Value "`"$notepadPlusPlusPath`" `"%1`""
+    if (-not (Test-Path "$regBase\$progID")) {
+        New-Item "$regBase\$progID" -Force | Out-Null
+        Set-ItemProperty "$regBase\$progID" "(Default)" "Notepad++ Document"
+        New-Item "$regBase\$progID\DefaultIcon" -Force | Out-Null
+        Set-ItemProperty "$regBase\$progID\DefaultIcon" "(Default)" $iconPath
+        New-Item "$regBase\$progID\shell\open\command" -Force | Out-Null
+        Set-ItemProperty "$regBase\$progID\shell\open\command" "(Default)" $cmdPath
     }
-} catch {
-    Write-Host "Error ensuring ProgID entry: $_" -ForegroundColor Red
-}
 
-# Add entry to the "New" menu
-try {
-    New-Item -Path "HKLM:\Software\Classes\.txt" -Force | Out-Null
-    Set-ItemProperty -Path "HKLM:\Software\Classes\.txt" -Name "(Default)" -Value $progID
-
-    New-Item -Path "HKLM:\Software\Classes\.txt\ShellNew" -Force | Out-Null
-    Set-ItemProperty -Path "HKLM:\Software\Classes\.txt\ShellNew" -Name "NullFile" -Value ""
+    New-Item "$regBase\.txt" -Force | Out-Null
+    Set-ItemProperty "$regBase\.txt" "(Default)" $progID
+    New-Item "$regBase\.txt\ShellNew" -Force | Out-Null
+    Set-ItemProperty "$regBase\.txt\ShellNew" "NullFile" ""
 } catch {
-    Write-Host "Error adding entry to the New menu: $_" -ForegroundColor Red
+    Write-Host "Error: $_" -ForegroundColor Red
 }
       ]]>
     </File>
@@ -2796,8 +2463,8 @@ if (-Not (Test-Path -Path $tempFolderPath)) {
 }
 
 # Download the font
-Write-Host "Downloading FiraCode Nerd Font..."
-Invoke-WebRequest -Uri $fontUrl -OutFile $zipFilePath
+$ProgressPreference = 'SilentlyContinue'
+(New-Object System.Net.WebClient).DownloadFile($fontUrl, $zipFilePath)
 
 # Extract the zip file
 Expand-Archive -Path $zipFilePath -DestinationPath $tempFolderPath
