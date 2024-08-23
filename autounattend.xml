@@ -95,8 +95,8 @@
         </RunSynchronousCommand>
         <RunSynchronousCommand wcm:action="add">
           <Order>8</Order>
-          <Description>Registry Entry to Execute the HKCU Registry Entry Script the First Time a New User Logs In</Description>
-          <Path>reg.exe add "HKU\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Runonce" /v "pwshscript" /t REG_SZ /d "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\powershell.ps1"</Path>
+          <Description>Executes the fonts Powershell Script</Description>
+          <Path>powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\powershell.ps1' -Raw | Invoke-Expression;"</Path>
         </RunSynchronousCommand>
         <RunSynchronousCommand wcm:action="add">
           <Order>9</Order>
@@ -139,6 +139,17 @@
         <NetworkLocation>Work</NetworkLocation>
         <ProtectYourPC>3</ProtectYourPC>
       </OOBE>
+      <FirstLogonCommands>
+				<SynchronousCommand wcm:action="add">
+					<Order>1</Order>
+					<CommandLine>reg.exe add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoLogonCount /t REG_DWORD /d 0 /f</CommandLine>
+				</SynchronousCommand>
+        <SynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <Description>Executes the fonts Powershell Script</Description>
+          <CommandLine>powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Get-Content -LiteralPath 'C:\Windows\Setup\Scripts\firstlogontweaks.ps1' -Raw | Invoke-Expression;"</CommandLine>
+        </SynchronousCommand>
+			</FirstLogonCommands>
     </component>
   </settings>
   <Extensions>
@@ -1794,7 +1805,7 @@ reg.exe add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policie
     <!--Additional Edge Removal Script by Chris Titus & AveYo to Ensure Complete Removal-->
     <File path="C:\Windows\Setup\Scripts\edgeremoval.bat">
       <![CDATA[
-@(set "0=%~f0"^)#) & powershell -nop -c iex([io.file]::ReadAllText($env:0)) & exit /b
+@(set "0=%~f0"^)#) & powershell -ExecutionPolicy Bypass -nop -c iex([io.file]::ReadAllText($env:0)) & exit /b
 #:: made by AveYo source: https://raw.githubusercontent.com/AveYo/fox/main/Edge_Removal.bat
 sp 'HKCU:\Volatile Environment' 'Edge_Removal' @'
 
@@ -2044,10 +2055,14 @@ $_Press_Enter
 </LayoutModificationTemplate>
 		]]>
     </File>
-    <File path="C:\Windows\Setup\Scripts\powershell.ps1">
+    <File path="C:\Windows\Setup\Scripts\firstlogontweaks.ps1">
       <![CDATA[
 # This script runs on first logon due to usage of winget that
 # needs user accounts to be created to function
+
+# Preferences
+$ProgressPreference = 'SilentlyContinue' # Suppress progress bar (makes downloading super fast)
+$ConfirmPreference = 'None' # Suppress confirmation prompts
 
 Add-Type -AssemblyName System.Windows.Forms
 
@@ -2068,6 +2083,7 @@ function Show-RestartMessage {
     }
 }
 
+<#
 # Function to check if explorer.exe is running
 function Is-ExplorerRunning {
     $process = Get-Process -Name explorer -ErrorAction SilentlyContinue
@@ -2079,30 +2095,31 @@ while (Is-ExplorerRunning) {
     Start-Process "shell:AppsFolder\Microsoft.WindowsTerminal_8wekyb3d8bbwe!App"
     Start-Sleep -Seconds 1
     Stop-Process -Name "WindowsTerminal" -ErrorAction SilentlyContinue -Force
-    Start-Process -FilePath "cmd.exe" -ArgumentList "/c taskkill /f /im explorer.exe" -NoNewWindow -Wait
+    #Start-Process -FilePath "cmd.exe" -ArgumentList "/c taskkill /f /im explorer.exe" -NoNewWindow -Wait
 }
-
-# Call the function to display a message box
-Show-RestartMessage
-
-# Speedup Powershell web download
-$ProgressPreference = 'SilentlyContinue'
+#>
 
 # Update winget (necessary for installation of the software below)
 powershell.exe -ExecutionPolicy Bypass -Command "& { &([ScriptBlock]::Create((irm winget.pro))) -Force }"
 
+# Call the function to display a message box
+Show-RestartMessage
+
 function Configure-PowershellAndCmd {
-    Start-Job -ScriptBlock {
-        # Install PowerShell 7 using winget
-        winget install --id Microsoft.Powershell --source winget --silent
+      Start-Job -ScriptBlock {
+        # Updates all installed apps using winget
+        # winget upgrade --all --silent --accept-package-agreements --accept-source-agreements
+
+        # Updates Windows Terminal using winget
+        winget upgrade --id Microsoft.WindowsTerminal -e --silent --accept-package-agreements --accept-source-agreements
 
         # Define font settings for CMD console
         $fontSettings = @{
-            "FaceName" = "FiraCode Nerd Font Mono"
-            "FontSize" = 1310720
-            "FontFamily" = 54
-            "FontWeight" = 440
-            "ColorTable00" = 0x000000
+        "FaceName" = "FiraCode Nerd Font Mono"
+        "FontSize" = 1310720
+        "FontFamily" = 54
+        "FontWeight" = 440
+        "ColorTable00" = 0x000000
         }
 
         # Define the registry path for CMD console settings
@@ -2123,9 +2140,11 @@ function Configure-PowershellAndCmd {
         }
 
         # Set registry values to remove default suggestions
+        # Set-ItemProperty -Path $startupRegistryPath -Name "DelegationConsole" -Value "{00000000-0000-0000-0000-000000000000}"
+        # Set-ItemProperty -Path $startupRegistryPath -Name "DelegationTerminal" -Value "{00000000-0000-0000-0000-000000000000}"
         Set-ItemProperty -Path $startupRegistryPath -Name "DelegationConsole" -Value "{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}"
         Set-ItemProperty -Path $startupRegistryPath -Name "DelegationTerminal" -Value "{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}"
-
+        
         # Update Terminal settings
         # Define the path to the settings.json file
         $settingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
@@ -2205,9 +2224,12 @@ function Install-OhMyPoshAndConfigureProfile {
         $pwsh7Theme = "jblab_2021.omp.json"
         $windowsTheme = "plague.omp.json"
 
+        # Get the Documents folder
+        $documentsPath = "$env:USERPROFILE\Documents"
+
         # Define paths to profile files
-        $pwsh7ProfilePath = "$HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
-        $windowsProfilePath = "$HOME\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
+        $pwsh7ProfilePath = Join-Path $documentsPath "PowerShell\Microsoft.PowerShell_profile.ps1"
+        $windowsProfilePath = Join-Path $documentsPath "WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
 
         # Ensure profile files exist
         @($pwsh7ProfilePath, $windowsProfilePath) | ForEach-Object {
@@ -2301,6 +2323,23 @@ function Register-FileTypesWithNotepadPlusPlus {
     }
 }
 
+# Get the current username and server
+$currentUser = $env:USERNAME
+$server = $env:COMPUTERNAME
+
+# Run 'query user' and check if the current user is logged in
+$queryOutput = query user /server:$server 2>&1
+$loggedIn = $queryOutput -split "`n" | Where-Object { $_.Trim() -match "^\s*$currentUser\s+" }
+
+# Terminate explorer.exe if running
+while ($loggedIn) {
+    Start-Process "shell:AppsFolder\Microsoft.WindowsTerminal_8wekyb3d8bbwe!App"
+    Start-Sleep -Seconds 1
+    Stop-Process -Name "WindowsTerminal" -ErrorAction SilentlyContinue -Force
+    break
+    #Start-Process -FilePath "cmd.exe" -ArgumentList "/c taskkill /f /im explorer.exe" -NoNewWindow -Wait
+}
+
 # Start the functions asynchronously
 $jobs = @()
 $jobs += Configure-PowershellAndCmd
@@ -2322,6 +2361,10 @@ shutdown.exe /r /t 5
     </File>
     <File path="C:\Windows\Setup\Scripts\securedelete.ps1">
       <![CDATA[
+# Preferences
+$ProgressPreference = 'SilentlyContinue' # Suppress progress bar (makes downloading super fast)
+$ConfirmPreference = 'None' # Suppress confirmation prompts
+
 # Download Sysinternals Secure Delete tool
 # Define URLs and paths
 $url = "https://download.sysinternals.com/files/SDelete.zip"
@@ -2332,7 +2375,6 @@ $destPath32 = "$env:SystemRoot\System32\sdelete.exe"
 $secureDeletePath = "$env:SystemRoot\SysWOW64\securedelete.ps1"
 
 # Download and extract Sysinternals Secure Delete tool
-$ProgressPreference = 'SilentlyContinue'
 (New-Object System.Net.WebClient).DownloadFile($url, $zipPath)
 Expand-Archive -Path $zipPath -DestinationPath $extractPath
 Move-Item -Path "$extractPath\sdelete64.exe" -Destination $destPath64 -Force
@@ -2380,6 +2422,10 @@ $psContent | Out-File -FilePath $secureDeletePath -Force -Encoding UTF8
     </File>
     <File path="C:\Windows\Setup\Scripts\notepad++.ps1">
       <![CDATA[
+# Preferences
+$ProgressPreference = 'SilentlyContinue' # Suppress progress bar (makes downloading super fast)
+$ConfirmPreference = 'None' # Suppress confirmation prompts
+
 # Function to get the latest Notepad++ release download URL
 function Get-LatestNppReleaseUrl {
     $apiUrl = "https://api.github.com/repos/notepad-plus-plus/notepad-plus-plus/releases/latest"
@@ -2391,7 +2437,6 @@ function Get-LatestNppReleaseUrl {
 $installerUrl = Get-LatestNppReleaseUrl
 $tempDir = [System.IO.Path]::GetTempPath()
 $installerPath = Join-Path $tempDir "npp_installer.exe"
-$ProgressPreference = 'SilentlyContinue'
 (New-Object System.Net.WebClient).DownloadFile($installerUrl, $installerPath)
 
 # Run the installer silently and unregister context menu integration
@@ -2432,6 +2477,10 @@ try {
     </File>
     <File path="C:\Windows\Setup\Scripts\fonts.ps1">
       <![CDATA[
+# Preferences
+$ProgressPreference = 'SilentlyContinue' # Suppress progress bar (makes downloading super fast)
+$ConfirmPreference = 'None' # Suppress confirmation prompts
+
 # Define the GitHub repository and API endpoint
 $repoOwner = "ryanoasis"
 $repoName = "nerd-fonts"
@@ -2463,7 +2512,6 @@ if (-Not (Test-Path -Path $tempFolderPath)) {
 }
 
 # Download the font
-$ProgressPreference = 'SilentlyContinue'
 (New-Object System.Net.WebClient).DownloadFile($fontUrl, $zipFilePath)
 
 # Extract the zip file
@@ -2484,6 +2532,30 @@ Get-ChildItem -Path $tempFolderPath -Filter *.ttf | ForEach-Object {
 # Remove the temporary folder and zip file
 Remove-Item -Path $tempFolderPath -Recurse -Force
       ]]>
+    </File>
+    <File path="C:\Windows\Setup\Scripts\powershell.ps1">
+      <![CDATA[ 
+# Preferences
+$ProgressPreference = 'SilentlyContinue' # Suppress progress bar (makes downloading super fast)
+$ConfirmPreference = 'None' # Suppress confirmation prompts
+
+# Get the latest PowerShell MSI URL from GitHub API
+$msiUrl = (Invoke-RestMethod https://api.github.com/repos/PowerShell/PowerShell/releases/latest).assets |
+          Where-Object { $_.name -match 'win-x64.msi$' } |
+          Select-Object -ExpandProperty browser_download_url
+
+# Define the download path
+$downloadPath = "$env:TEMP\pwsh-latest.msi"
+
+# Download the MSI installer using Invoke-WebRequest
+Invoke-WebRequest -Uri $msiUrl -OutFile $downloadPath
+
+# Install the MSI silently and enable auto-updates
+Start-Process msiexec.exe -ArgumentList "/i `"$downloadPath`" /quiet /norestart ENABLE_PSREMOTING=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1" -Wait
+
+# Clean up the downloaded file
+Remove-Item $downloadPath -Force
+    ]]>
     </File>
   </Extensions>
 </unattend>
